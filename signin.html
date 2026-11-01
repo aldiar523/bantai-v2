@@ -9,7 +9,7 @@
 <header id="top"></header>
 <main class="wrap">
   <form class="lock" id="f">
-    <h1 style="font-size:32px">Reviewer sign-in</h1>
+    <h1>Reviewer sign-in</h1>
     <p class="muted" style="margin:12px 0 24px;line-height:1.55">Enter the team key. It unlocks marks B and C, AI reviews and decisions on this device only, until you close the tab.</p>
     <label for="k" style="position:absolute;left:-9999px">Reviewer key</label>
     <input id="k" type="password" autocomplete="current-password" placeholder="Reviewer key" required>
@@ -20,7 +20,7 @@
 </main>
 <script src="assets/core.js"></script>
 <script>
-B.header('', {});
+B.header('');
 document.getElementById('k').addEventListener('input', () => document.getElementById('err').textContent = '');
 document.getElementById('f').addEventListener('submit', async e => {
   e.preventDefault();

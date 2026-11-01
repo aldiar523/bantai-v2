@@ -114,10 +114,10 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
   <section style="margin-top:16px;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:24px;padding-bottom:28px;border-bottom:3px solid var(--ink)">
     <div style="flex:1 1 640px;min-width:0">
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">${tierChip}<span class="num" style="font-size:15px;font-weight:500">${c.id}</span><span class="small" style="color:var(--ink2)">${B.esc(c.status)} · ${B.esc(c.office)}${place ? ' · ' + B.esc(place) : ''}</span></div>
-      <h1 style="margin-top:16px;font-size:${c.title.length > 140 ? 26 : c.title.length > 80 ? 32 : 40}px;line-height:1.12;max-width:960px">${B.esc(c.title)}</h1>
+      <h1 style="margin-top:16px;font-size:${c.title.length > 140 ? 'clamp(20px,1.9vw,26px)' : c.title.length > 80 ? 'clamp(22px,2.2vw,30px)' : 'clamp(26px,2.8vw,38px)'};line-height:1.14;max-width:900px">${B.esc(c.title)}</h1>
       ${c.status_notes.length ? `<div style="margin-top:14px;display:inline-flex;gap:10px;align-items:flex-start;padding:10px 14px;background:#FFF3C4;border-left:6px solid var(--orange);border-radius:0;font-size:15px;font-weight:500;color:#3A2A00;max-width:820px"><span aria-hidden="true">!</span><span>${c.status_notes.map(B.esc).join(' ')}</span></div>` : ''}
     </div>
-    <div style="text-align:right"><div class="num" style="font-size:40px;font-weight:600;letter-spacing:-.02em">${B.peso(c.amount)}</div><div class="small muted">contract amount</div></div>
+    <div style="text-align:right"><div class="num" style="font-size:clamp(24px,2.6vw,36px);font-weight:600;letter-spacing:-.02em;white-space:nowrap">${B.peso(c.amount)}</div><div class="small muted">contract amount</div></div>
   </section>
   <div style="display:flex;flex-wrap:wrap;gap:40px;margin-top:32px">
     <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:44px">

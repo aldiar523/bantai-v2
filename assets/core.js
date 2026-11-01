@@ -34,25 +34,16 @@ const B = (() => {
   }
 
   const logo = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v3M8 6.5v3M8 12v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-  function header(active, opts = {}) {
+  function header(active) {
     const el = document.getElementById('top');
     const rev = isReviewer();
     const link = (href, label, key) => `<a href="${href}" class="${active === key ? 'on' : ''}">${label}</a>`;
-    if (opts.light) {
-      el.className = 'top light';
-      el.innerHTML = `<div class="wrap">
-        <a class="brand" href="index.html"><i>${logo}</i>BantAI</a>
-        <nav class="nav"><a href="queue.html">Official records</a><a href="method.html">How it works</a><a href="ledger.html">Ledger</a>
-        ${rev ? '<a class="pill" href="queue.html">Open the queue</a>' : '<a class="pill" href="signin.html">Reviewer sign-in</a>'}</nav></div>`;
-      return;
-    }
     el.className = 'top';
-    el.innerHTML = `<div class="wrap"><div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap">
+    el.innerHTML = `<div class="wrap"><div class="left">
       <a class="brand" href="index.html"><i>${logo}</i>BantAI</a>
       <nav class="nav">${link('queue.html', rev ? 'Queue' : 'Official records', 'queue')}${link('method.html', 'How it works', 'method')}${link('ledger.html', 'Ledger', 'ledger')}</nav></div>
-      <div style="display:flex;align-items:center;gap:14px;font-size:13px;color:#B9B4A8">
-      <span class="num" id="weekLabel"></span>
-      ${rev ? '<button class="who" id="signout" title="Sign out"><span class="dot"></span>Reviewer</button>' : '<a class="who" href="signin.html" style="text-decoration:none">Reviewer sign-in</a>'}
+      <div class="right"><span class="num" id="weekLabel"></span>
+      ${rev ? '<button class="who" id="signout" title="Sign out"><span class="dot"></span>Reviewer · sign out</button>' : '<a class="who" href="signin.html">Reviewer sign-in</a>'}
       </div></div>`;
     const so = document.getElementById('signout');
     if (so) so.onclick = signOut;

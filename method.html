@@ -3,170 +3,218 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>How BantAI works</title>
+<meta name="description" content="How BantAI marks open DPWH contracts for checking: the three marks, the reasoning and law behind each, and how far each can be trusted.">
 <link rel="stylesheet" href="assets/style.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,800;0,8..60,900;1,8..60,600&family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-:root{--paper:#F4F1EA;--ink:#121212;--ink2:#3A3833;--mute:#6E6A60;--red:#C4362C;--orange:#EE8A3A;--yellow:#F4D35E;--rule:#121212}
-body{background:var(--paper)}
-.f{font-family:'Libre Franklin',system-ui,sans-serif;color:var(--ink)}
-.serif{font-family:'Source Serif 4',Georgia,serif}
-.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
-.col{max-width:1180px;margin:0 auto;padding:0 32px}
-.kicker{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
-.f p{font-size:18px;line-height:1.6;color:var(--ink2);margin:0 0 14px}
-.f a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
-.h2{font-family:'Source Serif 4',Georgia,serif;font-weight:800;font-size:44px;line-height:1.05;letter-spacing:-.02em;margin:10px 0 0}
-.block{padding:96px 0;border-top:3px solid var(--ink)}
-/* hero */
-.hero{position:relative;min-height:640px;display:flex;align-items:flex-end;background:#1a1a1a center/cover no-repeat;color:#fff}
-.hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,.86) 100%)}
-.hero .col{position:relative;padding-bottom:64px;width:100%}
-.hero h1{font-family:'Source Serif 4',Georgia,serif;font-weight:900;font-size:76px;line-height:.98;letter-spacing:-.03em;margin:16px 0 0;max-width:980px}
-.hero .dek{font-size:22px;line-height:1.5;color:#ECE8DF;max-width:720px;margin:24px 0 0}
-.credit{font-size:11px;color:#BDB8AC;letter-spacing:.02em}
-/* funnel */
-.fun{margin-top:48px}
-.fun .row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;padding:14px 0;border-bottom:1px solid #CFCAC0}
-.fun .lab .n{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;letter-spacing:-.02em}
-.fun .lab .lt{font-size:14px;color:var(--ink2);margin-top:2px}
-.bar{height:44px;background:var(--ink)}
-/* annotated case */
-.case{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:56px;margin-top:48px;align-items:start}
-.case figure{margin:0}
-.case img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;filter:contrast(1.05)}
-.note{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:22px 0;border-top:1px solid var(--ink)}
-.note .i{width:34px;height:34px;background:var(--red);color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:600;display:flex;align-items:center;justify-content:center;font-size:15px}
-.note h3{font-family:'Source Serif 4',Georgia,serif;font-size:24px;font-weight:800;line-height:1.15;margin:0 0 6px}
-.note p{font-size:16px;margin:0}
-/* marks */
-.marks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:48px}
-.marks>div{padding:36px 30px 40px;min-height:330px;display:flex;flex-direction:column}
-.marks .L{font-family:'Source Serif 4',Georgia,serif;font-weight:900;font-size:120px;line-height:.8}
-.marks h3{font-family:'Source Serif 4',Georgia,serif;font-size:28px;font-weight:800;margin:22px 0 10px}
-.marks p{font-size:16px;margin:0;color:inherit;opacity:.92}
-.marks .aud{margin-top:auto;padding-top:22px;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-/* checks */
-.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:56px;margin-top:40px}
-.ck{display:grid;grid-template-columns:150px 1fr;gap:18px;padding:16px 0;border-top:1px solid var(--ink)}
-.ck b{font-size:15px;font-weight:800}
-.ck span{font-size:15px;line-height:1.5;color:var(--ink2)}
-.ck i{display:block;font-style:normal;font-size:12px;color:var(--mute);margin-top:4px}
+/* page-specific blocks; type, colours and containers come from style.css */
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,3vw,40px)}
+.trio>div{border-top:3px solid var(--ink);padding-top:14px}
+.trio h3{font-family:var(--serif);font-size:clamp(19px,1.6vw,22px);font-weight:800;margin:0 0 8px}
+.trio p{font-size:16px!important;margin:0!important}
+/* anatomy */
+.case{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(28px,5vw,56px);margin-top:clamp(18px,3vh,32px);align-items:start}
+.note{display:grid;grid-template-columns:40px 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--ink)}
+.note .i{width:30px;height:30px;background:var(--red);color:#fff;font-family:var(--mono);font-weight:600;display:flex;align-items:center;justify-content:center;font-size:14px}
+.note h3{font-family:var(--serif);font-size:clamp(19px,1.7vw,22px);font-weight:800;line-height:1.15;margin:0 0 6px}
+.note p{font-size:15px!important;margin:0!important}
+/* tier chapters */
+.order{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:clamp(18px,3vh,30px)}
+.order>div{padding:16px 18px;display:flex;gap:14px;align-items:baseline}
+.order .L{font-family:var(--serif);font-weight:900;font-size:clamp(40px,4vw,56px);line-height:.8}
+.order b{display:block;font-size:15px}.order span{font-size:13px;opacity:.9}
+.ch{display:grid;grid-template-columns:minmax(220px,3fr) minmax(0,8fr);gap:clamp(24px,4vw,56px);padding:clamp(32px,6vh,56px) 0;border-top:3px solid var(--ink)}
+.ch aside{align-self:start;position:sticky;top:16px}
+.ch .tag{padding:22px 22px 24px}
+.ch .tag .L{font-family:var(--serif);font-weight:900;font-size:clamp(64px,7vw,96px);line-height:.8}
+.ch .tag h3{font-family:var(--serif);font-size:clamp(22px,2vw,28px);font-weight:800;margin:14px 0 4px}
+.ch .tag .n{font-family:var(--mono);font-size:14px;font-weight:600}
+.ch .tag .who2{margin-top:14px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.comp{margin-top:14px}
+.comp .r{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
+.comp .r i{display:block;height:6px;background:var(--ink);margin-top:4px}
+.comp .r .mono{text-align:right}
+.ch h4{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin:0 0 10px}
+.ch .part+.part{margin-top:clamp(22px,4vh,34px)}
+.trig{border-top:1px solid var(--ink)}
+.trig>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}
+.trig b{font-size:15px;line-height:1.35}
+.trig span{font-size:15px;line-height:1.5;color:var(--ink2)}
+.trig i{display:block;font-style:normal;font-family:var(--mono);font-size:12px;color:var(--mute);margin-top:4px}
+.why{font-family:var(--serif);font-size:clamp(19px,1.7vw,23px)!important;line-height:1.4!important;color:var(--ink)!important}
+.wrong{margin:0;padding:0;list-style:none;columns:2;column-gap:32px}
+.wrong li{break-inside:avoid;font-size:15px;line-height:1.5;color:var(--ink2);padding:8px 0 8px 18px;position:relative;border-top:1px solid var(--line)}
+.wrong li::before{content:"";position:absolute;left:0;top:16px;width:8px;height:2px;background:var(--red)}
+.first{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--card);border-left:6px solid var(--ink);font-size:15px;line-height:1.5}
+.first b{white-space:nowrap}
+.honest{padding:16px 18px;background:#E7E2D7;font-size:15px;line-height:1.55}
 /* can / cannot */
-.cc{display:grid;grid-template-columns:1fr 1fr;margin-top:48px}
-.cc>div{padding:40px 36px}
-.cc h3{font-family:'Source Serif 4',Georgia,serif;font-weight:900;font-size:40px;margin:0 0 18px}
+.cc{display:grid;grid-template-columns:1fr 1fr;margin-top:clamp(18px,3vh,30px)}
+.cc>div{padding:clamp(22px,4vh,34px) clamp(20px,3vw,32px)}
+.cc h3{font-family:var(--serif);font-weight:900;font-size:clamp(26px,2.6vw,34px);margin:0 0 12px}
 .cc ul{margin:0;padding:0;list-style:none}
-.cc li{font-size:17px;line-height:1.5;padding:12px 0;border-top:1px solid currentColor}
+.cc li{font-size:16px;line-height:1.45;padding:9px 0;border-top:1px solid currentColor}
 /* steps */
-.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin-top:48px;border-top:3px solid var(--ink)}
-.steps>div{padding:20px 18px 0 0;position:relative}
+.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:clamp(24px,4vh,40px);border-top:3px solid var(--ink)}
+.steps>div{padding:18px 16px 0 0;position:relative}
 .steps>div::before{content:"";position:absolute;top:-9px;left:0;width:15px;height:15px;background:var(--paper);border:3px solid var(--ink);border-radius:50%}
-.steps .n{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--red);font-weight:600;margin-top:10px}
-.steps h3{font-size:18px;font-weight:800;margin:6px 0 6px}
-.steps p{font-size:14px;line-height:1.5;margin:0}
+.steps .n{font-family:var(--mono);font-size:13px;color:var(--red);font-weight:600;margin-top:8px}
+.steps h3{font-size:17px;font-weight:800;margin:4px 0}
+.steps p{font-size:14px!important;line-height:1.5!important;margin:0!important}
 /* reliability */
-.rel{margin-top:40px}
-.rel .r{display:grid;grid-template-columns:minmax(0,1fr) 300px 200px;gap:24px;align-items:center;padding:18px 0;border-top:1px solid var(--ink)}
-.rel .r b{font-size:17px;font-weight:700}.rel .r small{display:block;font-size:14px;color:var(--ink2);margin-top:4px;font-weight:400}
-.meter{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.meter i{height:14px;background:#D9D4C9}.meter i.on{background:var(--ink)}
+.rel{margin-top:clamp(18px,3vh,30px)}
+.rel .r{display:grid;grid-template-columns:minmax(0,1fr) 220px 170px;gap:24px;align-items:center;padding:13px 0;border-top:1px solid var(--ink)}
+.rel .r b{font-size:16px;font-weight:700}.rel .r small{display:block;font-size:14px;color:var(--ink2);margin-top:3px;font-weight:400}
+.meter{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.meter i{height:12px;background:#D9D4C9}.meter i.on{background:var(--ink)}
 .verdict{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-/* data */
-.data{width:100%;border-collapse:collapse;margin-top:36px;font-size:15px}
-.data th{text-align:left;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:0 16px 12px 0;border-bottom:3px solid var(--ink)}
-.data td{padding:14px 16px 14px 0;border-bottom:1px solid #CFCAC0;color:var(--ink2);vertical-align:top}
+.data{width:100%;border-collapse:collapse;margin-top:clamp(18px,3vh,30px);font-size:15px}
+.data th{text-align:left;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:0 16px 10px 0;border-bottom:3px solid var(--ink)}
+.data td{padding:11px 16px 11px 0;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
 .data td:first-child{font-weight:700;color:var(--ink)}
-.dark{background:var(--ink);color:#F4F1EA}
-.dark p{color:#D9D4C9}
-@media (max-width:900px){.hero h1{font-size:46px}.h2{font-size:34px}.case,.cc,.checks{grid-template-columns:1fr}.marks{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr;row-gap:28px}.rel .r{grid-template-columns:1fr}.fun .row{grid-template-columns:1fr}}
+@media (max-width:900px){.trio,.case,.cc,.order{grid-template-columns:1fr}.ch{grid-template-columns:1fr}.ch aside{position:static}.trig>div{grid-template-columns:1fr;gap:4px}.wrong{columns:1}.steps{grid-template-columns:1fr 1fr;row-gap:24px}.rel .r{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header id="top"></header>
 <div class="f">
 
-<section class="hero" style="background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/JfFloodControlProjectMeycauayan00031fvf_01.JPG?width=2000')">
+<section class="hero" style="background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/915Plaridel_Bypass_Arterial_Road_Bypass_Project.jpg?width=2000')">
   <div class="col">
-    <div class="kicker" style="color:#F4D35E">How BantAI works</div>
-    <h1>Every week, 266,890 public works contracts. Which ones should someone check?</h1>
-    <p class="dek">BantAI reads the whole DPWH project list each Monday and marks the open contracts that auditors, reporters and citizen monitors should look at first, with the reason and the source for each mark.</p>
-    <div class="credit" style="margin-top:28px">Flood-control works in Meycauayan, Bulacan. Photo: Judgefloro, CC BY-SA 4.0, via Wikimedia Commons.</div>
+    <div class="kicker" style="color:#F4D35E">How it works</div>
+    <h1>How a contract gets on the list, and how far to trust it</h1>
+    <p class="dek">Three kinds of mark, the reasoning and the law behind each, what can make them wrong, and what has been tested so far.</p>
+    <div class="credit" style="margin-top:22px">Plaridel bypass road works, Bulacan, 2017. Photo: Florentino Floro, CC0, via Wikimedia Commons.</div>
   </div>
 </section>
 
-<section style="padding:80px 0 40px">
-  <div class="col" style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:32px;align-items:start">
-    <div style="height:8px;background:var(--red);margin-top:30px"></div>
-    <p class="serif" style="font-size:46px;line-height:1.12;font-weight:600;font-style:italic;color:var(--ink);margin:0;max-width:900px">A mark is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
+<section class="block" style="border-top:0">
+  <div class="col trio">
+    <div><h3>The goal</h3><p>Point people with limited time to the open public works contracts most worth checking, while the money can still be stopped or recovered.</p></div>
+    <div><h3>For whom</h3><p>State auditors, reporters and citizen monitors. The official records are public; the rest of the list is for a review team.</p></div>
+    <div><h3>What a mark is</h3><p>A request to check, with the reason and its source. It is never a finding, and it never says that anyone did wrong.</p></div>
   </div>
 </section>
 
-<section class="block" style="border-top:0;padding-top:40px">
+<section class="block" id="marks">
   <div class="col">
-    <div class="kicker">From a quarter of a million to a working list</div>
-    <h2 class="h2">What one week looks like</h2>
-    <p style="margin-top:16px;max-width:760px">Only open contracts can still be checked before the money is paid. Of those, fewer than one in forty is marked. Bars are to scale.</p>
-    <div class="fun" id="funnel"></div>
+    <div class="kicker">The three marks</div>
+    <h2 class="h2">Ordered by how much outside confirmation stands behind them</h2>
+    <p style="margin-top:12px;max-width:780px">A contract gets the highest mark it qualifies for. A comes first because an official body has already acted. B comes next because the figures contradict a written rule. C comes last because it rests on BantAI's own reading of patterns. Within each mark, larger contracts come first.</p>
+    <div class="order">
+      <div style="background:var(--red);color:#fff"><div class="L">A</div><div><b>Official record</b><span>Someone with authority acted</span></div></div>
+      <div style="background:var(--orange);color:#2B1503"><div class="L">B</div><div><b>Rule broken</b><span>The figures contradict the law</span></div></div>
+      <div style="background:var(--yellow);color:#2E2400"><div class="L">C</div><div><b>Several signals</b><span>Independent warning signs agree</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- A -->
+<section class="col ch" id="tierA">
+  <aside><div class="tag" style="background:var(--red);color:#fff"><div class="L">A</div><h3>Official record</h3><div class="n" id="aN"></div><div class="who2">Public</div></div>
+    <div class="comp" id="aComp"></div></aside>
+  <div>
+    <div class="part"><h4>What puts a contract here</h4>
+      <div class="trig">
+        <div><b>The contract is named in an official record</b><span>A COA audit finding, including COA's 2025–26 fraud audits of flood-control works that found missing, relocated or pre-existing structures; an official action by DPWH or another agency; or a Sandiganbayan case.<i>Matched by contract ID</i></span></div>
+        <div><b>The contractor's licence is revoked or suspended</b><span>Including any partner in a joint venture. A contractor needs a valid PCAB licence to undertake construction.<i>RA 4566 · PCAB sanctions list · matched by licence number</i></span></div>
+        <div><b>DPWH's own records mark the licence [REVOKED]</b><span>DPWH adds the marker to the contractor's name in its project list.<i>DPWH project list</i></span></div>
+      </div></div>
+    <div class="part"><h4>Why it comes first</h4>
+      <p class="why">BantAI does not judge anything here. An auditor, a court, a regulator or DPWH itself has already acted, and the contract is still open. The question is simply whether that action reached this contract: who is doing the work now, and whether payments continue.</p>
+      <p>This is also why A is the only public mark. It repeats what an official source has already published, in the source's own words: "revoked", "charged", "listed". Most revocations on the list date from 1 September 2025, often well after the award.</p></div>
+    <div class="part"><h4>How it can be wrong</h4>
+      <ul class="wrong">
+        <li>A licence number is mistyped in the DPWH list, so the wrong firm is matched.</li>
+        <li>A revocation was lifted or appealed after PCAB published it.</li>
+        <li>The DPWH status is stale: the work is finished, or the contract was already terminated or reassigned.</li>
+        <li>A record names a project with a similar title in another year or office.</li>
+      </ul></div>
+    <div class="part"><div class="first"><b>Check first</b><span>The contractor's current PCAB status, and DPWH's record of the contract since the revocation: suspension, termination, reassignment, or payments made.</span></div></div>
+  </div>
+</section>
+
+<!-- B -->
+<section class="col ch" id="tierB">
+  <aside><div class="tag" style="background:var(--orange);color:#2B1503"><div class="L">B</div><h3>Rule broken</h3><div class="n" id="bN"></div><div class="who2">Review team</div></div>
+    <div class="comp" id="bComp"></div></aside>
+  <div>
+    <div class="part"><h4>What puts a contract here</h4>
+      <div class="trig">
+        <div><b>Award above the approved budget</b><span>The approved budget for the contract is, by law, the ceiling for any acceptable bid. A bid above it is disqualified, so an award above it should not exist.<i>RA 9184, Sec. 31</i></span></div>
+        <div><b>Contract larger than the licence allows</b><span>Each PCAB licence category has an allowable range of contract cost for a single project. A contract above the range of the winner's category should not have been awarded to it.<i>PCAB rules under RA 4566 · contracts from 2025</i></span></div>
+        <div><b>Completed in under a quarter of the contract time</b><span>Work finished this fast either was reported done before it was, or had its contract time padded. It mostly applies to finished contracts, so it rarely reaches the open list.<i>DPWH dates</i></span></div>
+      </div></div>
+    <div class="part"><h4>Why it comes second</h4>
+      <p class="why">No official has said anything yet, but no judgement about what is normal is needed either. The law sets the line, and the published figures are on the wrong side of it.</p>
+      <p>Two things can be true when that happens: a rule was broken, or a figure was entered wrongly. Either is worth knowing, and only the documents can tell them apart. That is why B stays with the review team until a document check of a sample shows that at least 70% are confirmed and fewer than 30% are data errors.</p></div>
+    <div class="part"><div class="honest" id="bHonest">This week almost all B marks come from one check, the licence limit. The table of limits is being verified against PCAB's original before B is relied on.</div></div>
+    <div class="part"><h4>How it can be wrong</h4>
+      <ul class="wrong">
+        <li>A joint venture is recorded under one partner, whose category alone is too small.</li>
+        <li>The licence category or the amount is entered wrongly.</li>
+        <li>The award includes items the approved budget figure in PhilGEPS does not.</li>
+        <li>The limits table differs from PCAB's current one.</li>
+      </ul></div>
+    <div class="part"><div class="first"><b>Check first</b><span>The notice of award and the bid documents: the approved budget, the bid amount, who bid, and the licence (or joint-venture agreement) submitted at bidding.</span></div></div>
+  </div>
+</section>
+
+<!-- C -->
+<section class="col ch" id="tierC">
+  <aside><div class="tag" style="background:var(--yellow);color:#2E2400"><div class="L">C</div><h3>Several signals</h3><div class="n" id="cN"></div><div class="who2">Review team</div></div>
+    <div class="comp" id="cComp"></div></aside>
+  <div>
+    <div class="part"><h4>What puts a contract here</h4>
+      <p>Three or more of these families fire on the same contract. A family counts once, however many of its signs fire.</p>
+      <div class="trig">
+        <div><b>Tender</b><span>One bidder at 98% or more of the budget; an award at 94% or less; an award 8 days or less after bid opening.<i>No price pressure · delivery risk · little time to evaluate</i></span></div>
+        <div><b>Price</b><span>Road cost per kilometre above the 95th percentile for the same year and region.<i>Inflated estimate</i></span></div>
+        <div><b>Contractor record</b><span>A contract terminated after work started; a third of past evaluations behind schedule; citizen reports on other projects.<i>CPES · DPWH list</i></span></div>
+        <div><b>Concentration</b><span>One contractor holds half of an office's contract value in a year.<i>An office captured by one firm</i></span></div>
+        <div><b>Site and package</b><span>The same site funded again within 3 years; small contracts split within 60 days and 1 km; duplicate entries.<i>Paying twice · splitting to stay under thresholds</i></span></div>
+        <div><b>Legal limits</b><span>Any of the rule checks in B.<i>RA 9184 · PCAB</i></span></div>
+        <div><b>Delivery</b><span>Under way only: a government evaluation found 15% or more slippage or a Poor rating.<i>CPES · GPPB Circular 03-2019</i></span></div>
+      </div>
+      <p style="margin-top:12px;font-size:15px;color:var(--mute)">Shown as context and never counted: the province's share of elected officials from political families. It is the same for every contract in a province, so it says nothing about one contract.</p></div>
+    <div class="part"><h4>Why three, and why it comes last</h4>
+      <p class="why">Every sign on its own has an ordinary explanation. A remote site draws one bidder; a good firm wins a lot in a small office. But the ordinary explanation is different for each family. When three unrelated ones fire on the same contract, three ordinary explanations have to line up at once.</p>
+      <p>This is the logic of red-flag screening used in procurement research. Three is where the list stays workable: <span id="cShare"></span>.</p></div>
+    <div class="part"><div class="honest">Tested against about 260 known problem contracts, contracts with two or more families were only 1.08 times as common as expected, which is no real difference. Too few known cases had three or more to test at all. So C rests on how schemes work, not on proof that it predicts them. That is why it comes last, why only the review team sees it, and why every weekly list is sealed: it will be tested against what comes out later.</div></div>
+    <div class="part"><h4>How it can be wrong</h4>
+      <ul class="wrong">
+        <li>The ordinary explanations do line up: a remote, flood-prone site with few able firms.</li>
+        <li>Families that look independent share one cause, such as a small local market.</li>
+        <li>Price benchmarks ignore terrain, bridges or materials that justify a higher cost.</li>
+        <li>Site matching joins two different works at nearby coordinates.</li>
+      </ul></div>
+    <div class="part"><div class="first"><b>Check first</b><span>Which families fired and whether they share a cause. Then the documents for the strongest one: bids for tender, the cost estimate for price, past evaluations for the record.</span></div></div>
   </div>
 </section>
 
 <section class="block">
   <div class="col">
-    <div class="kicker">Anatomy of a mark</div>
+    <div class="kicker">One example</div>
     <h2 class="h2">One contract, three things that do not add up</h2>
     <div class="case">
-      <figure>
-        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/915Plaridel_Bypass_Arterial_Road_Bypass_Project.jpg?width=1400" alt="A road under construction: concrete pavement and earthworks on a bypass in Bulacan" loading="lazy">
-        <figcaption class="credit" style="color:var(--mute);margin-top:10px">For illustration: Plaridel bypass road works, Bulacan, 2017 (not the contract described). Photo: Florentino Floro, CC0, via Wikimedia Commons.</figcaption>
-        <div style="margin-top:28px;padding:20px 22px;background:var(--ink);color:#F4F1EA">
-          <div class="mono" style="font-size:13px;color:#F4D35E">24D00109 · REGION IV-A · CALAMBA, LAGUNA</div>
-          <div class="serif" style="font-size:22px;font-weight:800;margin-top:8px;line-height:1.25">Rehabilitation of damaged paved roads, Daang Maharlika: three segments, 1.66 km, ₱244.0 million</div>
-        </div>
-      </figure>
       <div>
-        <div class="note"><div class="i">1</div><div><h3>The contractor lost its licence, and the work went on</h3><p>PCAB revoked the contractor's licence on 1 September 2025, seventeen months after the award. DPWH still lists the work as on-going. <b>Mark A: an official record.</b></p></div></div>
-        <div class="note"><div class="i">2</div><div><h3>₱146.8 million per kilometre</h3><p>That is 3.7 times the median for 2024 road contracts in the region, and above the 95th percentile of 421 comparable roads.</p>
-          <div style="position:relative;height:58px;margin-top:16px">
+        <div style="padding:20px 22px;background:var(--ink);color:#F4F1EA">
+          <div class="mono" style="font-size:13px;color:#F4D35E">24D00109 · REGION IV-A · CALAMBA, LAGUNA</div>
+          <div class="serif" style="font-size:clamp(19px,1.7vw,22px);font-weight:800;margin-top:8px;line-height:1.25">Rehabilitation of damaged paved roads, Daang Maharlika: three segments, 1.66 km, ₱244.0 million</div>
+          <div style="display:flex;gap:8px;margin-top:14px"><span class="t tA">A</span><span style="font-size:13px;color:#D9D4C9">Official record, the highest mark it qualifies for</span></div>
+        </div>
+        <p style="font-size:15px;color:var(--mute);margin-top:14px">None of this says anything happened. It says where to start reading. <a href="contract.html?id=24D00109">Open the contract page →</a></p>
+      </div>
+      <div>
+        <div class="note"><div class="i">1</div><div><h3>The contractor lost its licence, and the work went on</h3><p>PCAB revoked the contractor's licence on 1 September 2025, seventeen months after the award. DPWH still lists the work as on-going.</p></div></div>
+        <div class="note"><div class="i">2</div><div><h3>₱146.8 million per kilometre</h3><p>3.7 times the median for 2024 road contracts in the region, and above the 95th percentile of 421 comparable roads.</p>
+          <div style="position:relative;height:54px;margin-top:14px">
             <div style="position:absolute;left:0;right:0;top:22px;height:3px;background:#CFCAC0"></div>
-            <div style="position:absolute;left:25%;top:12px;width:2px;height:22px;background:var(--ink)"></div><div class="mono" style="position:absolute;left:25%;top:38px;font-size:12px;transform:translateX(-50%)">median 40.7</div>
-            <div style="position:absolute;left:85%;top:12px;width:2px;height:22px;background:var(--ink)"></div><div class="mono" style="position:absolute;left:85%;top:38px;font-size:12px;transform:translateX(-70%)">95th 139.8</div>
+            <div style="position:absolute;left:25%;top:12px;width:2px;height:22px;background:var(--ink)"></div><div class="mono" style="position:absolute;left:25%;top:36px;font-size:12px;transform:translateX(-50%)">median 40.7</div>
+            <div style="position:absolute;left:85%;top:12px;width:2px;height:22px;background:var(--ink)"></div><div class="mono" style="position:absolute;left:85%;top:36px;font-size:12px;transform:translateX(-70%)">95th 139.8</div>
             <div style="position:absolute;left:90%;top:13px;width:20px;height:20px;border-radius:50%;background:var(--red);transform:translateX(-50%)"></div><div class="mono" style="position:absolute;left:90%;top:-8px;font-size:12px;font-weight:600;color:var(--red);transform:translateX(-50%)">146.8</div>
           </div></div></div>
-        <div class="note"><div class="i">3</div><div><h3>40% done after 926 days</h3><p>No planned completion date in the DPWH list. The first thing to ask for: the contract time, any extensions, and who has been doing the work since the licence was revoked.</p></div></div>
-        <p style="font-size:14px;color:var(--mute);margin-top:14px">None of this says anything happened. It says where to start reading. <a href="contract.html?id=24D00109">Open the contract page →</a></p>
+        <div class="note"><div class="i">3</div><div><h3>40% done, long past the planned end</h3><p>The first thing to ask for: the contract time, any extensions, and who has been doing the work since the licence was revoked.</p></div></div>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="block">
-  <div class="col">
-    <div class="kicker">The marks</div>
-    <h2 class="h2">Three reasons a contract is in the list</h2>
-    <div class="marks">
-      <div style="background:var(--red);color:#fff"><div class="L">A</div><h3>Official record</h3><p>An audit, a court case, an official statement, the ghost-project list, or a revoked licence already names the contract or its contractor.</p><div class="aud">Public</div></div>
-      <div style="background:var(--orange);color:#2B1503"><div class="L">B</div><h3>Rule broken</h3><p>The figures contradict a law or each other: an award above the approved budget, a contract above the contractor's licence limit.</p><div class="aud">Review team · public after a document check</div></div>
-      <div style="background:var(--yellow);color:#2E2400"><div class="L">C</div><h3>Several signals</h3><p>Three or more of six independent warning signs fire on the same contract: tender, price, track record, concentration, site, licence limit.</p><div class="aud">Review team</div></div>
-    </div>
-  </div>
-</section>
-
-<section class="block">
-  <div class="col">
-    <div class="kicker">Under the hood</div>
-    <h2 class="h2">Every check, and why it counts</h2>
-    <div class="checks">
-      <div class="ck"><b>Official record</b><span>Named in a COA audit finding, the ghost-project list, an official action or a Sandiganbayan case<i>The record itself; status words as the source gives them</i></span></div>
-      <div class="ck"><b>Licence</b><span>Licence of the contractor, or of any joint-venture partner, revoked or suspended<i>PCAB sanctions list; DPWH list</i></span></div>
-      <div class="ck"><b>Award above budget</b><span>The award is higher than the approved budget<i>RA 9184, Sec. 31</i></span></div>
-      <div class="ck"><b>Licence limit</b><span>The contract is larger than the contractor's licence category allows<i>PCAB allowable range of contract cost</i></span></div>
-      <div class="ck"><b>Tender</b><span>One bidder at 98%+ of budget; an award at 94% or less; an award 8 days or less after bid opening<i>No price pressure; delivery risk; no time to evaluate</i></span></div>
-      <div class="ck"><b>Price</b><span>Road price per km above the 95th percentile for the same year and region<i>Inflated estimate</i></span></div>
-      <div class="ck"><b>Track record</b><span>A contract terminated after work started; a third of past evaluations behind schedule; citizen reports on other projects<i>CPES; DPWH list</i></span></div>
-      <div class="ck"><b>Concentration</b><span>One contractor holds half of an office's contract value in a year<i>Capture of an office</i></span></div>
-      <div class="ck"><b>Site</b><span>The same site funded again within 3 years; small contracts split within 60 days and 1 km; duplicate entries<i>Paying twice; splitting to avoid thresholds</i></span></div>
-      <div class="ck"><b>Delivery</b><span>A government evaluation found 15%+ slippage or a Poor rating; possibly stalled<i>GPPB Circular 03-2019</i></span></div>
-    </div>
-    <p style="margin-top:24px;font-size:15px;color:var(--mute)">Shown as context, not counted: the province's share of officials from political families. It is the same for every contract in a province.</p>
   </div>
 </section>
 
@@ -176,7 +224,7 @@ body{background:var(--paper)}
     <h2 class="h2">What it can do, and what it cannot</h2>
     <div class="cc">
       <div class="dark"><h3>It can</h3><ul>
-        <li>Read all 266,890 contracts in the DPWH list every week.</li>
+        <li>Read the whole DPWH project list every week.</li>
         <li>Show which open contracts already carry an official record.</li>
         <li>Find figures that break a rule.</li>
         <li>Show where several independent warning signs agree.</li>
@@ -196,10 +244,10 @@ body{background:var(--paper)}
     <div class="kicker">Every Monday</div>
     <h2 class="h2">Six steps, the same each week</h2>
     <div class="steps">
-      <div><div class="n">01 · 09:00</div><h3>Read</h3><p>Save the full DPWH list and what changed since last week.</p></div>
+      <div><div class="n">01</div><h3>Read</h3><p>Save the full DPWH list and what changed since last week.</p></div>
       <div><div class="n">02</div><h3>Join</h3><p>Link each contract to PhilGEPS, bid records, evaluations, licences and known cases.</p></div>
       <div><div class="n">03</div><h3>Check</h3><p>Run every check on every open contract. Contracts reported 100% done count as complete.</p></div>
-      <div><div class="n">04</div><h3>Rank</h3><p>A, then B, then C; larger first; no office above 30% of the top 50.</p></div>
+      <div><div class="n">04</div><h3>Rank</h3><p>A, then B, then C; larger first; no office above 15 of the top 50.</p></div>
       <div><div class="n">05</div><h3>Seal</h3><p>Fix the list with a fingerprint in the public <a href="ledger.html">ledger</a>.</p></div>
       <div><div class="n">06</div><h3>Review</h3><p>People read the documents, may ask for an AI review, and decide.</p></div>
     </div>
@@ -208,21 +256,20 @@ body{background:var(--paper)}
 
 <section class="block">
   <div class="col">
-    <div class="kicker">Evidence</div>
+    <div class="kicker">Evidence so far</div>
     <h2 class="h2">How far each mark can be trusted</h2>
-    <p style="margin-top:16px;max-width:780px">Tested against the problem contracts that can be tied to a contract ID. There are about 260, too few to prove that a warning sign predicts wrongdoing, so the weekly lists are sealed and will be tested forward.</p>
     <div class="rel">
-      <div class="r"><div><b>Official records (A)</b><small>As reliable as the record. Matching is by contract ID or licence number.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><div class="verdict">Solid</div></div>
-      <div class="r"><div><b>Rule checks (B)</b><small>Correct by definition if the data are right; a document check measures data errors.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="verdict">Document check due</div></div>
-      <div class="r"><div><b>Several signals (C)</b><small>Grounded in how schemes work; slightly more common among known cases, but not significantly.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div><div class="verdict">Not yet shown</div></div>
-      <div class="r"><div><b>Satellite change detection</b><small>Found change at as many ordinary sites as ghost sites. Not used; images stay for human eyes.</small></div><div class="meter"><i></i><i></i><i></i><i></i><i></i></div><div class="verdict" style="color:var(--red)">Did not work</div></div>
+      <div class="r"><div><b>Official records (A)</b><small>As reliable as the record and the match by contract ID or licence number.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><div class="verdict">Solid</div></div>
+      <div class="r"><div><b>Rule checks (B)</b><small>Correct by definition if the data are right; a document check will measure data errors.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="verdict">Document check due</div></div>
+      <div class="r"><div><b>Several signals (C)</b><small>Grounded in how schemes work; not yet shown to separate known cases.</small></div><div class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div><div class="verdict">Not yet shown</div></div>
+      <div class="r"><div><b>Satellite change detection</b><small>Found change at as many ordinary sites as missing ones. Not used; images stay for human eyes.</small></div><div class="meter"><i></i><i></i><i></i><i></i><i></i></div><div class="verdict" style="color:var(--red)">Did not work</div></div>
       <div class="r"><div><b>Bid rotation among firms</b><small>A pattern seen in a sample disappeared on complete data. Not used.</small></div><div class="meter"><i></i><i></i><i></i><i></i><i></i></div><div class="verdict" style="color:var(--red)">Did not work</div></div>
     </div>
   </div>
 </section>
 
 <section class="block dark" style="border-top:0">
-  <div class="col" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px">
+  <div class="col" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(24px,4vw,56px)">
     <div><div class="kicker" style="color:#F4D35E">AI review</div><h2 class="h2" style="color:#fff">A second look, on request</h2></div>
     <div><p>A reviewer can ask for an AI review of one contract: a summary, ordinary explanations to rule out, what news, official statements and court records say, and the next documents to request. Every outside claim links to its source.</p><p>It advises. It never changes a mark or a decision, never calls anyone corrupt, and only the review team sees it.</p></div>
   </div>
@@ -233,7 +280,7 @@ body{background:var(--paper)}
     <div class="kicker">Sources</div>
     <h2 class="h2">Open data only</h2>
     <table class="data">
-      <thead><tr><th style="width:260px">Source</th><th>Used for</th><th style="width:150px">Updated</th></tr></thead>
+      <thead><tr><th style="width:260px">Source</th><th>Used for</th><th style="width:140px">Updated</th></tr></thead>
       <tbody>
         <tr><td><a href="https://www.dpwh.gov.ph" target="_blank" rel="noopener">DPWH project list</a></td><td>Every contract: office, budget, contractor, status, progress, dates, location</td><td>Weekly</td></tr>
         <tr><td><a href="https://www.philgeps.gov.ph" target="_blank" rel="noopener">PhilGEPS</a></td><td>Approved budget, award amount and date, procurement mode</td><td>Periodic</td></tr>
@@ -245,13 +292,13 @@ body{background:var(--paper)}
         <tr><td>OpenStreetMap, Esri World Imagery</td><td>Maps and satellite images</td><td>Live</td></tr>
       </tbody>
     </table>
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin-top:64px;padding-top:24px;border-top:3px solid var(--ink)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;margin-top:clamp(28px,5vh,48px);padding-top:20px;border-top:3px solid var(--ink)">
       <div><b style="font-size:15px">Source words</b><p style="font-size:15px;margin-top:6px">"Charged", "revoked": never stronger than the source.</p></div>
       <div><b style="font-size:15px">No private names</b><p style="font-size:15px;margin-top:6px">No company officers, owners or employees.</p></div>
       <div><b style="font-size:15px">Encrypted review</b><p style="font-size:15px;margin-top:6px">Marks B and C, AI reviews and decisions open only with the team's key.</p></div>
       <div><b style="font-size:15px">Open data</b><p style="font-size:15px;margin-top:6px">Public, legal sources only.</p></div>
     </div>
-    <p style="margin-top:56px;font-size:13px;color:var(--mute)">Method v2.1 · A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.</p>
+    <p style="margin-top:clamp(28px,5vh,48px);font-size:13px;color:var(--mute)" id="ver">A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.</p>
   </div>
 </section>
 </div>
@@ -259,17 +306,23 @@ body{background:var(--paper)}
 <script>
 B.header('method');
 B.publicData().then(p => {
-  const t = p.totals, rows = [
-    [t.contracts, 'contracts in the DPWH list'],
-    [t.open, 'still open: procurement, not started, under way'],
-    [t.marked, 'marked this week']];
-  const max = t.contracts;
-  let h = rows.map(([n, l]) => `<div class="row"><div class="lab"><div class="n">${B.n(n)}</div><div class="lt">${l}</div></div><div><div class="bar" style="width:${Math.max(0.25, 100 * n / max)}%"></div></div></div>`).join('');
-  const tt = t.tiers, sum = tt.A + tt.B + tt.C;
-  h += `<div class="row" style="border-bottom:0"><div class="lab"><div class="lt" style="font-weight:700;color:var(--ink)">The ${B.n(sum)}, magnified</div></div>
-    <div><div style="display:flex;height:64px">${[['A', 'var(--red)', '#fff', 'Official record'], ['B', 'var(--orange)', '#2B1503', 'Rule broken'], ['C', 'var(--yellow)', '#2E2400', 'Several signals']].map(([k, bg, fg, l]) =>
-      `<div style="width:${100 * tt[k] / sum}%;background:${bg};color:${fg};padding:10px 12px;box-sizing:border-box;overflow:hidden"><div class="mono" style="font-size:22px;font-weight:600">${k} ${B.n(tt[k])}</div><div style="font-size:12px;font-weight:600">${l}</div></div>`).join('')}</div></div></div>`;
-  document.getElementById('funnel').innerHTML = h;
+  const t = p.totals, tt = t.tiers, bd = p.breakdown || { A: {}, B: {}, C: {} };
+  const comp = (id, rows, total) => {
+    const max = Math.max(1, ...rows.map(r => r[1]));
+    document.getElementById(id).innerHTML = `<div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding-bottom:6px">${total}</div>` +
+      rows.map(([l, v]) => `<div class="r"><div>${l}<i style="width:${(100 * (v || 0) / max).toFixed(1)}%"></i></div><div class="mono">${B.n(v || 0)}</div></div>`).join('');
+  };
+  document.getElementById('aN').textContent = `${B.n(tt.A)} this week`;
+  document.getElementById('bN').textContent = `${B.n(tt.B)} this week`;
+  document.getElementById('cN').textContent = `${B.n(tt.C)} this week`;
+  comp('aComp', [['Licence revoked or suspended', bd.A.pcab], ['Named in an official record', bd.A.record], ['DPWH [REVOKED] marker only', bd.A.dpwh_marker]], 'This week, by main reason');
+  comp('bComp', [['Above the licence limit', bd.B.licence_limit], ['Award above budget', bd.B.award_above_budget], ['Done in under a quarter of the time', bd.B.too_fast]], 'This week, by rule');
+  comp('cComp', [['Contractor record', bd.C.F3], ['Site and package', bd.C.F6], ['Concentration', bd.C.F4], ['Tender', bd.C.F1], ['Price', bd.C.F2], ['Delivery', bd.C.F8]], 'How often each family fires');
+  const share = 100 * tt.C / t.open;
+  document.getElementById('cShare').textContent = `this week ${B.n(tt.C)} of ${B.n(t.open)} open contracts, about ${share < 1 ? share.toFixed(2) : share.toFixed(1)}%`;
+  const bTot = (bd.B.licence_limit || 0) + (bd.B.award_above_budget || 0) + (bd.B.too_fast || 0);
+  if (bTot) document.getElementById('bHonest').textContent = `This week ${B.n(bd.B.licence_limit || 0)} of ${B.n(tt.B)} B marks come from one check, the licence limit. The table of limits is being verified against PCAB's original before B is relied on.`;
+  document.getElementById('ver').textContent = `Method ${p.method} · A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.`;
 });
 </script>
 </body>
