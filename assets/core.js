@@ -29,7 +29,8 @@ const B = (() => {
   async function allContracts() {
     const p = await publicData();
     const r = await reviewerData();
-    return { list: r ? p.contracts.concat(r.contracts) : p.contracts.slice(), reviewer: !!r };
+    return { list: r ? p.contracts.concat(r.contracts) : p.contracts.slice(), reviewer: !!r,
+             analyses: (r && r.analyses) || {}, relay: (r && r.relay) || '' };
   }
 
   const logo = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v3M8 6.5v3M8 12v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -41,14 +42,14 @@ const B = (() => {
       el.className = 'top light';
       el.innerHTML = `<div class="wrap" style="padding-top:12px;padding-bottom:12px">
         <a class="brand" href="index.html"><i style="color:#F6F5F1">${logo}</i>BantAI</a>
-        <nav class="nav"><a href="#how">How it works</a><a href="ledger.html">Weekly ledger</a><a href="queue.html">Official records</a>
+        <nav class="nav"><a href="method.html">Method</a><a href="ledger.html">Weekly ledger</a><a href="queue.html">Official records</a>
         ${rev ? '<a class="pill" href="queue.html">Open the queue</a>' : '<a class="pill" href="signin.html">Reviewer sign-in</a>'}</nav></div>`;
       return;
     }
     el.className = 'top';
     el.innerHTML = `<div class="wrap"><div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap">
       <a class="brand" href="index.html"><i style="color:#1B1A17">${logo}</i>BantAI</a>
-      <nav class="nav">${link('queue.html', rev ? 'Queue' : 'Official records', 'queue')}${link('ledger.html', 'Ledger', 'ledger')}</nav></div>
+      <nav class="nav">${link('queue.html', rev ? 'Queue' : 'Official records', 'queue')}${link('method.html', 'Method', 'method')}${link('ledger.html', 'Ledger', 'ledger')}</nav></div>
       <div style="display:flex;align-items:center;gap:14px;font-size:13px;color:#B9B4A8">
       <span class="num" id="weekLabel"></span>
       ${rev ? '<button class="who" id="signout" title="Sign out"><span class="dot"></span>Reviewer</button>' : '<a class="who" href="signin.html" style="text-decoration:none">Reviewer sign-in</a>'}
