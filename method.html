@@ -24,7 +24,7 @@
 <body>
 <header id="top"></header>
 <main class="wrap doc" style="padding-top:32px;padding-bottom:72px">
-  <p class="label">Method v2.0 · frozen 1 Nov 2026</p>
+  <p class="label">Method v2.1 · 1 Nov 2026</p>
   <h1 style="font-size:40px">How BantAI works</h1>
   <p style="font-size:18px;margin-top:16px">BantAI reads the full list of DPWH public works contracts every week and marks open contracts worth a closer look. It does not estimate the probability that a contract is corrupt. A mark is a request to check, never an accusation.</p>
   <nav class="toc" aria-label="On this page"><a href="#goal">Goal</a><a href="#process">Weekly process</a><a href="#marks">The three marks</a><a href="#checks">Every check</a><a href="#evidence">What we tested</a><a href="#ai">AI review</a><a href="#data">Data sources</a><a href="#rules">Publication rules</a><a href="#limits">Limits</a></nav>
@@ -119,7 +119,7 @@
 
   <h2 id="limits">Limits</h2>
   <ul>
-    <li>DPWH statuses lag: thousands of contracts report 100% done but are still listed as on-going. Contract pages say so where it applies.</li>
+    <li>DPWH statuses lag: about 7,300 contracts report 100% done but are still listed as on-going. Since v2.1 they count as "reported complete" and leave the open-contract queue; a contract re-enters if its progress drops below 100%.</li>
     <li>Coordinates are as DPWH gives them. For buildings they mark the building site; where many contracts share a point it may be an office or a placeholder.</li>
     <li>Contracts still in procurement rarely reach the list: the winner and bids are not known yet.</li>
     <li>Tender and price checks cover only contracts with bid records or stated road lengths; a missing check lowers a score, it never raises it.</li>
