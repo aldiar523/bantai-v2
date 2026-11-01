@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BantAI — weekly ledger</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header id="top"></header>
+<main class="wrap" style="padding-top:32px;padding-bottom:64px;max-width:900px">
+  <h1 style="font-size:32px">Weekly ledger</h1>
+  <p style="margin:12px 0 28px;line-height:1.6;color:var(--ink2)">Each Monday's list is saved with a SHA-256 fingerprint and committed to a public history. Anyone can later check that a list was not changed after the fact, and compare it with what became known since.</p>
+  <div class="tbl"><div id="rows"></div></div>
+</main>
+<script src="assets/core.js"></script>
+<script>
+B.header('ledger');
+B.publicData().then(p => {
+  document.getElementById('rows').innerHTML = `<div class="tr head" style="grid-template-columns:150px minmax(0,1fr) 90px 90px"><div class="th">List of</div><div class="th">SHA-256</div><div class="th r">Marked</div><div class="th r">Method</div></div>` +
+    p.ledger.slice().reverse().map(l => `<div class="tr" style="grid-template-columns:150px minmax(0,1fr) 90px 90px"><div class="td">${B.date(l.snapshot_date)}</div><div class="td num small" title="${l.sha256}">${l.sha256}</div><div class="td r num">${B.n(l.queue)}</div><div class="td r num">${l.method}</div></div>`).join('');
+});
+</script>
+</body>
+</html>

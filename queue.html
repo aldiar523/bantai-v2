@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BantAI — queue</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header id="top"></header>
+<main class="wrap" style="padding-top:28px;padding-bottom:48px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px">
+    <div>
+      <h1 style="font-size:30px;letter-spacing:-.02em" id="title">Queue</h1>
+      <p class="small muted" style="margin:6px 0 0" id="sub"></p>
+    </div>
+    <div id="counts" style="display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)"></div>
+  </div>
+
+  <div style="margin-top:24px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+    <label class="field" style="flex:1 1 280px;min-width:0">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B675E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" aria-label="Search" placeholder="Contract ID, work, office or contractor" style="flex:1">
+    </label>
+    <button class="btn" id="fbtn" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>Filters <span class="num" id="fcount"></span></button>
+    <label class="field small muted">Group
+      <select id="group" style="color:var(--ink)"><option value="">None</option><option value="tier">Mark</option><option value="region">Region</option><option value="office">Office</option><option value="status">Status</option><option value="year">Year</option><option value="contractor">Contractor</option></select>
+    </label>
+    <button class="btn" id="cbtn" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>Columns</button>
+    <button class="btn dark" id="csv"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Export CSV</button>
+  </div>
+  <div id="active" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
+  <div id="fpanel" class="panel" hidden></div>
+  <div id="cpanel" class="panel" style="padding:16px" hidden></div>
+
+  <div class="tbl" style="margin-top:16px"><div id="table"></div></div>
+  <div class="small muted" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 2px">
+    <span id="shown"></span><span>Click a header to sort. Drag a header to move it, its right edge to resize.</span>
+  </div>
+</main>
+<script src="assets/core.js"></script>
+<script>
+B.header('queue');
+const COLS = [
+  { key: 'tier', label: 'Mark', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 320 },
+  { key: 'region', label: 'Region', w: 150 }, { key: 'office', label: 'Office', w: 170, off: true }, { key: 'contractor', label: 'Contractor', w: 230, off: true },
+  { key: 'year', label: 'Year', w: 70, num: 1, off: true }, { key: 'amount', label: '₱ million', w: 110, num: 1 }, { key: 'progress', label: 'Done %', w: 84, num: 1, off: true },
+  { key: 'signals', label: 'Signals', w: 80, num: 1 }, { key: 'reason', label: 'Main reason', w: 280 }, { key: 'status', label: 'Status', w: 120, off: true }
+];
+const FILTERS = [
+  { key: 'tier', name: 'Mark', type: 'chips', opts: ['A', 'B', 'C'] },
+  { key: 'status', name: 'Status', type: 'chips', opts: ['On-Going', 'Not Yet Started', 'For Procurement'] },
+  { key: 'region', name: 'Region', type: 'chips', opts: null },
+  { key: 'year', name: 'Year', type: 'range', lo: 'from', hi: 'to' },
+  { key: 'amount', name: 'Amount', type: 'range', lo: 'min', hi: 'max', unit: '₱ million' },
+  { key: 'progress', name: 'Work done', type: 'range', lo: 'from', hi: 'to', unit: '%' },
+  { key: 'signals', name: 'Signals at least', type: 'min', opts: ['1', '2', '3', '4'] },
+  { key: 'fams', name: 'Has signal', type: 'all', opts: ['Tender', 'Price', 'Contractor', 'Concentration', 'Site', 'Licence limit', 'Delivery'] },
+  { key: 'tags', name: 'Official or rule', type: 'all', opts: ['Licence revoked', 'Named in a record', 'Award above budget', 'Above licence limit'] },
+  { key: 'review', name: 'Review', type: 'chips', opts: ['Not reviewed', 'Escalate', 'Monitor', 'No concern', 'Data error'] }
+];
+const saved = JSON.parse(localStorage.getItem('bantai-cols') || 'null');
+const S = { q: '', group: '', vals: {}, shown: ['tier', 'region', 'amount', 'fams'], sort: 'rank', dir: 1,
+  cols: saved && saved.length === COLS.length ? saved : COLS.map(c => ({ key: c.key, w: c.w, on: !c.off })) };
+let ROWS = [], REV = false;
+const def = k => COLS.find(c => c.key === k);
+const saveCols = () => localStorage.setItem('bantai-cols', JSON.stringify(S.cols));
+const decisions = () => JSON.parse(localStorage.getItem('bantai-decisions') || '{}');
+
+function tagsOf(c) {
+  const t = [];
+  c.reasons.forEach(r => {
+    if (/revoked/i.test(r.text)) t.push('Licence revoked');
+    if (/^Named in/.test(r.text)) t.push('Named in a record');
+    if (/above the approved budget/.test(r.text)) t.push('Award above budget');
+    if (/licence category/.test(r.text)) t.push('Above licence limit');
+  });
+  return [...new Set(t)];
+}
+function mainReason(c) { const r = c.reasons.find(r => r.basis !== 'S'); return r ? r.text : c.fams.join(' · '); }
+
+B.allContracts().then(({ list, reviewer }) => {
+  REV = reviewer;
+  const dec = decisions();
+  ROWS = list.map(c => ({ ...c, amountM: c.amount / 1e6, tags: tagsOf(c), reason: mainReason(c),
+    review: { escalate: 'Escalate', monitor: 'Monitor', clear: 'No concern', error: 'Data error' }[dec[c.id]?.pick] || 'Not reviewed' }));
+  FILTERS.find(f => f.key === 'region').opts = [...new Set(ROWS.map(r => r.region))].sort();
+  B.publicData().then(p => {
+    const t = p.totals.tiers;
+    document.getElementById('title').textContent = REV ? 'Review queue' : 'Open contracts with an official record';
+    document.getElementById('sub').innerHTML = REV ? `Open contracts marked this week. Sealed: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
+      : `Mark A only. Marks B and C are for the review team. <a href="signin.html">Reviewer sign-in</a>`;
+    const box = (n, l, c) => `<div style="padding:10px 18px;border-right:1px solid var(--line2);${c ? `box-shadow:inset 0 -3px 0 var(--${c})` : ''}"><div class="num" style="font-size:20px;font-weight:500">${B.n(n)}</div><div class="tiny muted">${l}</div></div>`;
+    document.getElementById('counts').innerHTML = (REV ? box(p.totals.marked, 'marked') : '') + box(t.A, 'A · official', 'a') +
+      (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + box(Object.keys(decisions()).length, 'decided on this device') : '');
+    if (!REV) S.shown = ['region', 'amount', 'tags'];
+    draw();
+  });
+});
+
+function pass(r) {
+  const q = S.q.toLowerCase();
+  if (q && !(r.id + ' ' + r.title + ' ' + r.office + ' ' + r.contractor).toLowerCase().includes(q)) return false;
+  return FILTERS.every(f => {
+    const v = S.vals[f.key]; if (v == null) return true;
+    const key = f.key === 'amount' ? 'amountM' : f.key, x = r[key];
+    if (f.type === 'range') return (v.lo === '' || v.lo == null || x >= +v.lo) && (v.hi === '' || v.hi == null || x <= +v.hi);
+    if (!v.length) return true;
+    if (f.type === 'min') return x >= +v[0];
+    if (f.type === 'all') return v.every(o => (x || []).includes(o));
+    return v.includes(String(x));
+  });
+}
+const isSet = f => { const v = S.vals[f.key]; return v != null && (f.type === 'range' ? (v.lo ?? '') !== '' || (v.hi ?? '') !== '' : v.length > 0); };
+
+function cell(r, c) {
+  const k = c.key;
+  if (k === 'tier') return `<span class="t t${r.tier}">${r.tier}</span>`;
+  if (k === 'id') return `<a class="rowlink" href="contract.html?id=${encodeURIComponent(r.id)}">${r.id}</a>`;
+  if (k === 'amount') return (r.amount / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (k === 'progress') return r.progress == null ? '—' : r.progress.toFixed(1);
+  return B.esc(r[k] ?? '—');
+}
+function draw() {
+  let rows = ROWS.filter(pass);
+  const k = S.sort === 'amount' ? 'amountM' : S.sort;
+  rows.sort((a, b) => { const x = a[k], y = b[k]; return (typeof x === 'number' || typeof y === 'number' ? (x ?? -1) - (y ?? -1) : String(x ?? '').localeCompare(String(y ?? ''))) * S.dir; });
+  const vis = S.cols.filter(c => c.on && (REV || !['signals', 'review'].includes(c.key)));
+  const grid = vis.map(c => (c.key === 'short' || c.key === 'reason') ? `minmax(${c.w}px,1fr)` : c.w + 'px').join(' ');
+  const minw = vis.reduce((a, c) => a + c.w, 0);
+  let html = `<div class="tr head" style="grid-template-columns:${grid};min-width:${minw}px">` + vis.map(c => {
+    const d = def(c.key);
+    return `<div class="th ${d.num ? 'r' : ''}" draggable="true" data-k="${c.key}" role="button" tabindex="0" aria-sort="${S.sort === c.key ? (S.dir > 0 ? 'ascending' : 'descending') : 'none'}">${d.label}<span class="num" style="font-size:11px">${S.sort === c.key ? (S.dir > 0 ? '↑' : '↓') : ''}</span><span class="grip" data-g="${c.key}"></span></div>`;
+  }).join('') + '</div>';
+  const groups = [];
+  if (!S.group) groups.push({ label: null, rows });
+  else { const m = new Map(); rows.forEach(r => { const g = S.group === 'tier' ? r.tier + ' · ' + B.tierName[r.tier] : r[S.group]; if (!m.has(g)) m.set(g, []); m.get(g).push(r); }); m.forEach((rs, g) => groups.push({ label: g, rows: rs })); }
+  groups.forEach(g => {
+    if (g.label != null) html += `<div class="grp" style="min-width:${minw}px">${B.esc(g.label)}<span class="num muted" style="font-weight:400">${g.rows.length}</span></div>`;
+    html += g.rows.slice(0, 600).map(r => `<div class="tr" style="grid-template-columns:${grid};min-width:${minw}px">` + vis.map(c => `<div class="td ${def(c.key).num ? 'r num' : ''}" ${['short', 'reason', 'contractor'].includes(c.key) ? `title="${B.esc(r[c.key === 'short' ? 'title' : c.key])}"` : ''}>${cell(r, c)}</div>`).join('') + '</div>').join('');
+  });
+  if (!rows.length) html += `<div style="padding:40px 14px;text-align:center" class="muted">No contract matches these filters.</div>`;
+  document.getElementById('table').innerHTML = html;
+  document.getElementById('shown').innerHTML = `Showing <span class="num">${B.n(rows.length)}</span> of <span class="num">${B.n(ROWS.length)}</span>`;
+  wireHeaders(); drawActive(); drawFilters(); drawCols();
+}
+function wireHeaders() {
+  let drag = null;
+  document.querySelectorAll('.th').forEach(th => {
+    const k = th.dataset.k;
+    th.onclick = e => { if (e.target.classList.contains('grip')) return; if (S.sort === k) S.dir = -S.dir; else { S.sort = k; S.dir = def(k).num ? -1 : 1; } draw(); };
+    th.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); th.click(); } };
+    th.ondragstart = e => { drag = k; e.dataTransfer.effectAllowed = 'move'; };
+    th.ondragover = e => { e.preventDefault(); th.classList.add('drop'); };
+    th.ondragleave = () => th.classList.remove('drop');
+    th.ondrop = e => { e.preventDefault(); th.classList.remove('drop'); if (!drag || drag === k) return;
+      const from = S.cols.findIndex(c => c.key === drag), item = S.cols.splice(from, 1)[0]; S.cols.splice(S.cols.findIndex(c => c.key === k), 0, item); saveCols(); draw(); };
+  });
+  document.querySelectorAll('.grip').forEach(g => {
+    g.draggable = false;
+    g.onmousedown = e => { e.preventDefault(); e.stopPropagation(); const col = S.cols.find(c => c.key === g.dataset.g), x0 = e.clientX, w0 = col.w;
+      const mv = ev => { col.w = Math.max(60, Math.min(600, w0 + ev.clientX - x0)); draw(); };
+      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); saveCols(); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up); };
+  });
+}
+function drawActive() {
+  const act = FILTERS.filter(isSet);
+  document.getElementById('fcount').textContent = act.length || '';
+  const fmt = f => { const v = S.vals[f.key]; return f.type === 'range' ? `${v.lo || '…'}–${v.hi || '…'}` : f.type === 'min' ? v[0] + '+' : v.join(', '); };
+  document.getElementById('active').innerHTML = act.map(f => `<span style="display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 4px 0 12px;background:var(--card);border:1px solid var(--ink);border-radius:999px;font-size:13px"><span class="muted">${f.name}</span>${B.esc(fmt(f))}<button class="x" data-clear="${f.key}" aria-label="Remove ${f.name} filter">×</button></span>`).join('') +
+    (act.length ? `<button class="small" id="clearAll" style="border:0;background:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;color:var(--ink2)">Clear all</button>` : '');
+  document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { delete S.vals[b.dataset.clear]; draw(); });
+  const ca = document.getElementById('clearAll'); if (ca) ca.onclick = () => { S.vals = {}; draw(); };
+}
+function drawFilters() {
+  const p = document.getElementById('fpanel'); if (p.hidden) return;
+  const avail = FILTERS.filter(f => REV || !['tier', 'signals', 'fams', 'review'].includes(f.key));
+  p.innerHTML = S.shown.filter(k => avail.some(f => f.key === k)).map(k => {
+    const f = FILTERS.find(x => x.key === k), v = S.vals[k] ?? (f.type === 'range' ? { lo: '', hi: '' } : []);
+    let body = '';
+    if (f.type === 'range') body = `<label class="small muted" style="display:flex;align-items:center;gap:8px">${f.lo} <input type="number" data-r="${k}" data-e="lo" value="${v.lo ?? ''}" placeholder="any"></label><label class="small muted" style="display:flex;align-items:center;gap:8px">${f.hi} <input type="number" data-r="${k}" data-e="hi" value="${v.hi ?? ''}" placeholder="any"></label><span class="tiny" style="color:var(--faint)">${f.unit || ''}</span>`;
+    else body = f.opts.map(o => `<button class="chip ${k === 'tier' ? 't' + o : ''} ${v.includes(o) ? 'on' : ''}" aria-pressed="${v.includes(o)}" data-f="${k}" data-o="${B.esc(o)}">${k === 'tier' ? o + ' · ' + B.tierName[o] : f.type === 'min' ? o + '+' : B.esc(o)}</button>`).join('');
+    return `<div class="frow"><div class="small" style="padding-top:8px;font-weight:500">${f.name}</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">${body}</div><button class="x" data-hide="${k}" aria-label="Hide the ${f.name} filter">×</button></div>`;
+  }).join('') + `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:14px 18px"><span class="small muted">Add a filter</span>${avail.filter(f => !S.shown.includes(f.key)).map(f => `<button class="chip" style="border-style:dashed" data-add="${f.key}">+ ${f.name}</button>`).join('')}</div>`;
+  p.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const k = b.dataset.f, o = b.dataset.o, f = FILTERS.find(x => x.key === k), v = S.vals[k] || [];
+    S.vals[k] = f.type === 'min' ? (v[0] === o ? [] : [o]) : (v.includes(o) ? v.filter(x => x !== o) : [...v, o]); draw(); });
+  p.querySelectorAll('[data-r]').forEach(i => i.onchange = () => { const k = i.dataset.r; S.vals[k] = { ...(S.vals[k] || { lo: '', hi: '' }), [i.dataset.e]: i.value }; draw(); });
+  p.querySelectorAll('[data-hide]').forEach(b => b.onclick = () => { S.shown = S.shown.filter(x => x !== b.dataset.hide); delete S.vals[b.dataset.hide]; draw(); });
+  p.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { S.shown.push(b.dataset.add); draw(); });
+}
+function drawCols() {
+  const p = document.getElementById('cpanel'); if (p.hidden) return;
+  p.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="small muted" style="margin-right:6px">Show or hide. Drag headers to reorder, their edge to resize.</span>` +
+    S.cols.filter(c => REV || !['signals', 'review'].includes(c.key)).map(c => `<button class="chip ${c.on ? 'on' : ''}" aria-pressed="${c.on}" data-c="${c.key}">${def(c.key).label}</button>`).join('') +
+    `<button class="chip" id="resetCols" style="border-style:dashed">Reset</button></div>`;
+  p.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const c = S.cols.find(x => x.key === b.dataset.c); c.on = !c.on; saveCols(); draw(); });
+  document.getElementById('resetCols').onclick = () => { S.cols = COLS.map(c => ({ key: c.key, w: c.w, on: !c.off })); saveCols(); draw(); };
+}
+document.getElementById('q').oninput = e => { S.q = e.target.value; draw(); };
+document.getElementById('group').onchange = e => { S.group = e.target.value; draw(); };
+const tog = (btn, panel) => document.getElementById(btn).onclick = () => { const p = document.getElementById(panel); p.hidden = !p.hidden; document.getElementById(btn).setAttribute('aria-expanded', String(!p.hidden)); document.getElementById(btn).classList.toggle('dark', !p.hidden); draw(); };
+tog('fbtn', 'fpanel'); tog('cbtn', 'cpanel');
+document.getElementById('csv').onclick = () => {
+  const rows = ROWS.filter(pass), keys = ['tier', 'id', 'title', 'region', 'office', 'contractor', 'year', 'status', 'amount', 'progress'].concat(REV ? ['signals', 'fams'] : []).concat(['reason']);
+  const q = v => '"' + String(Array.isArray(v) ? v.join('; ') : v ?? '').replace(/"/g, '""') + '"';
+  const blob = new Blob([keys.join(',') + '\n' + rows.map(r => keys.map(k => q(r[k])).join(',')).join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bantai-queue.csv'; a.click();
+};
+</script>
+</body>
+</html>

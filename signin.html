@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BantAI — reviewer sign-in</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header id="top"></header>
+<main class="wrap">
+  <form class="lock" id="f">
+    <h1 style="font-size:32px">Reviewer sign-in</h1>
+    <p class="muted" style="margin:12px 0 24px;line-height:1.55">Enter the team key. It unlocks marks B and C, AI reviews and decisions on this device only, until you close the tab.</p>
+    <label for="k" style="position:absolute;left:-9999px">Reviewer key</label>
+    <input id="k" type="password" autocomplete="current-password" placeholder="Reviewer key" required>
+    <div class="err" id="err" role="alert"></div>
+    <button class="btn dark" style="width:100%;justify-content:center;min-height:46px;margin-top:8px" type="submit">Unlock</button>
+    <p class="tiny muted" style="margin-top:18px">The key is never sent anywhere. Your browser uses it to open an encrypted file.</p>
+  </form>
+</main>
+<script src="assets/core.js"></script>
+<script>
+B.header('', {});
+document.getElementById('k').addEventListener('input', () => document.getElementById('err').textContent = '');
+document.getElementById('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const v = document.getElementById('k').value.trim(), err = document.getElementById('err');
+  if (!v) { err.textContent = 'Enter the key first.'; return; }
+  err.textContent = 'Checking…';
+  const ok = await B.reviewerData(v);
+  if (ok) location.href = 'queue.html'; else err.textContent = 'That key does not open the file. Check it and try again.';
+});
+</script>
+</body>
+</html>
