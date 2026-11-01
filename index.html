@@ -5,101 +5,167 @@
 <title>BantAI — public works, read closely</title>
 <meta name="description" content="A weekly, open-data screen of DPWH public works contracts in the Philippines. A mark is a request to look, never an accusation.">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+.lead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;margin-top:8px;align-items:start}
+.big-n{font-family:var(--serif);font-weight:900;font-size:128px;line-height:.85;letter-spacing:-.04em;color:var(--red)}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) 64px 84px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.hbar .b{height:12px;background:var(--red);margin-top:6px}
+.where{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:64px;margin-top:40px;align-items:start}
+.yrs{display:grid;gap:10px;align-items:end;height:280px;border-bottom:3px solid var(--ink);margin-top:36px;position:relative}
+.cta{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;font-weight:700;font-size:15px;text-decoration:none!important}
+@media (max-width:900px){.lead,.where{grid-template-columns:1fr}.big-n{font-size:84px}}
+</style>
 </head>
 <body>
 <header id="top"></header>
-<main class="wrap" id="main" aria-busy="true">
-  <section style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;padding:28px 0">
-    <div style="max-width:720px">
-      <h1>Public works, read closely.</h1>
-      <p style="margin:14px 0 0;font-size:17px;line-height:1.55;color:var(--ink2)">Every week BantAI reads the full DPWH contract list and marks open contracts worth a second look. A mark asks someone to check. It never accuses.</p>
+<div class="f" id="main" aria-busy="true">
+
+<section class="hero" style="background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/JfFloodControlProjectMeycauayan00031fvf_01.JPG?width=2000')">
+  <div class="col">
+    <div class="kicker" style="color:#F4D35E" id="kick">This week</div>
+    <h1 id="headline">Open public works contracts worth a closer look</h1>
+    <p class="dek" id="dek">BantAI reads the whole DPWH project list every Monday and marks the open contracts to check first.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:32px">
+      <a class="cta" href="queue.html" style="background:var(--red);color:#fff">See the official records →</a>
+      <a class="cta" href="method.html" style="border:2px solid #fff;color:#fff">How it works</a>
     </div>
-    <div class="num small muted" style="text-align:right;line-height:1.7" id="when"></div>
-  </section>
+    <div class="credit" style="margin-top:28px">Flood-control works in Meycauayan, Bulacan. Photo: Judgefloro, CC BY-SA 4.0, via Wikimedia Commons.</div>
+  </div>
+</section>
 
-  <section aria-label="Key figures" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px" id="kpis"></section>
+<section style="padding:72px 0 24px">
+  <div class="col" style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:32px;align-items:start">
+    <div style="height:8px;background:var(--red);margin-top:28px"></div>
+    <p class="serif" style="font-size:42px;line-height:1.14;font-weight:600;font-style:italic;color:var(--ink);margin:0;max-width:920px">A mark is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
+  </div>
+</section>
 
-  <section style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px">
-    <div class="card" style="flex:999 1 640px;min-width:0">
-      <h2 id="floodTitle">Flood control's share of DPWH contract value</h2>
-      <p class="small muted" style="margin:6px 0 0">Contract value by start year, ₱ billion. Dark: flood control, the focus of the 2025 scandal.</p>
-      <div id="years" role="img" style="margin-top:22px;display:grid;gap:12px;align-items:end;height:240px;border-bottom:1px solid var(--ink)"></div>
-      <div id="yearLabels" class="num tiny muted" style="display:grid;gap:12px;margin-top:8px"></div>
+<section class="block" style="border-top:0;padding-top:48px">
+  <div class="col">
+    <div class="kicker">The week in one picture</div>
+    <h2 class="h2">From a quarter of a million contracts to a working list</h2>
+    <p style="margin-top:16px;max-width:760px">Only open contracts can still be checked before the money is paid. Bars are to scale.</p>
+    <div class="fun" id="funnel"></div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="col">
+    <div class="kicker">The lead</div>
+    <div class="lead">
+      <div>
+        <div class="big-n" id="revN">—</div>
+        <h2 class="h2" style="margin-top:18px" id="revHead">open contracts are still with contractors whose licence was revoked</h2>
+        <p style="margin-top:18px" id="revText"></p>
+        <p style="font-size:14px;color:var(--mute)">Status as published by the Philippine Contractors Accreditation Board and the DPWH project list. A revocation after the award does not by itself mean the work is wrong; it means someone should ask who is doing it.</p>
+        <a href="queue.html" style="font-weight:700">See every contract with an official record →</a>
+      </div>
+      <div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 84px;gap:12px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding-bottom:10px;border-bottom:3px solid var(--ink)"><span>Contractor, licence revoked</span><span style="text-align:right">Open</span><span style="text-align:right">Value</span></div>
+        <div id="firms"></div>
+      </div>
     </div>
-    <figure class="card" style="flex:1 1 320px;min-width:0;margin:0">
-      <h2>Where they are</h2>
-      <p class="small muted" style="margin:6px 0 0">Grey: DPWH contract sites. Red: open, with an official record.</p>
-      <img src="assets/ph_roads.svg" alt="Map of the Philippines drawn from DPWH contract sites; open contracts with an official record in red" style="width:100%;max-width:300px;height:auto;margin:16px auto 0;display:block">
-    </figure>
-  </section>
+  </div>
+</section>
 
-  <section style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px">
-    <div class="card" style="flex:1 1 460px;min-width:0">
-      <h2>Open contracts with an official record, by region</h2>
-      <p class="small muted" style="margin:6px 0 18px">Bar: value. Number: contracts.</p>
-      <div id="regions" style="display:flex;flex-direction:column;gap:10px;font-size:13px"></div>
+<section class="block">
+  <div class="col">
+    <div class="kicker">Where</div>
+    <h2 class="h2" id="whereHead">Open contracts with an official record, by region</h2>
+    <div class="where">
+      <figure style="margin:0">
+        <img src="assets/ph_roads.svg" alt="Map of the Philippines drawn from DPWH contract sites; open contracts with an official record in red" style="width:100%;height:auto;display:block">
+        <figcaption class="small" style="color:var(--mute);margin-top:10px">Every grey dot is a DPWH contract site; the shape of the islands comes from the roads and works themselves. Red: open, with an official record.</figcaption>
+      </figure>
+      <div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 64px 84px;gap:12px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding-bottom:10px;border-bottom:3px solid var(--ink)"><span>Region</span><span style="text-align:right">Contracts</span><span style="text-align:right">Value</span></div>
+        <div id="regions"></div>
+      </div>
     </div>
-    <div class="card" style="flex:1 1 460px;min-width:0">
-      <h2>Revoked licences, most open work</h2>
-      <p class="small muted" style="margin:6px 0 12px">Status as published by PCAB. Open contracts in the DPWH list.</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead><tr class="tiny muted" style="text-align:left"><th scope="col" style="font-weight:500;padding:8px 0;border-bottom:1px solid var(--ink)">Contractor</th><th scope="col" style="font-weight:500;padding:8px 0;border-bottom:1px solid var(--ink);text-align:right">Contracts</th><th scope="col" style="font-weight:500;padding:8px 0;border-bottom:1px solid var(--ink);text-align:right">Value</th></tr></thead>
-        <tbody id="firms"></tbody>
-      </table>
+  </div>
+</section>
+
+<section class="block">
+  <div class="col">
+    <div class="kicker">The money</div>
+    <h2 class="h2" id="floodTitle">Flood control's share of DPWH contract value</h2>
+    <p style="margin-top:14px;max-width:760px">Contract value by start year, ₱ billion. Black: flood control, the focus of the 2025 scandal. Grey: everything else.</p>
+    <div class="yrs" id="years" role="img"></div>
+    <div id="yearLabels" class="mono" style="display:grid;gap:10px;margin-top:10px;font-size:12px;color:var(--mute)"></div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="col">
+    <div class="kicker">The marks</div>
+    <h2 class="h2">Three reasons a contract is in the list</h2>
+    <div class="marks">
+      <div style="background:var(--red);color:#fff"><div class="L">A</div><h3>Official record</h3><p>An audit, a court case, an official statement, the ghost-project list, or a revoked licence already names the contract or its contractor.</p><div class="aud" id="nA">Public</div></div>
+      <div style="background:var(--orange);color:#2B1503"><div class="L">B</div><h3>Rule broken</h3><p>The figures contradict a law or each other: an award above the approved budget, a contract above the contractor's licence limit.</p><div class="aud" id="nB">Review team</div></div>
+      <div style="background:var(--yellow);color:#2E2400"><div class="L">C</div><h3>Several signals</h3><p>Three or more of six independent warning signs fire on the same contract: tender, price, track record, concentration, site, licence limit.</p><div class="aud" id="nC">Review team</div></div>
     </div>
-  </section>
+    <p style="margin-top:24px"><a href="method.html" style="font-weight:700">Every check, the evidence behind it, and its limits →</a></p>
+  </div>
+</section>
 
-  <div class="lane" style="margin:56px 0 0"></div>
+<section class="dark" style="padding:64px 0">
+  <div class="col" style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div><div class="kicker" style="color:#F4D35E">Sealed</div><h2 class="h2" style="color:#fff;max-width:640px">This week's list cannot be changed afterwards.</h2>
+      <p style="margin-top:14px;max-width:620px">Every Monday's list gets a SHA-256 fingerprint in a public ledger, so it can later be compared with audits, cases and statements that come out.</p></div>
+    <div><div class="mono" id="seal" style="font-size:14px;color:#F4D35E;margin-bottom:14px"></div><a class="cta" href="ledger.html" style="border:2px solid #fff;color:#fff">See all weeks</a></div>
+  </div>
+</section>
 
-  <section id="how" style="padding:44px 0 8px">
-    <h2 style="font-size:24px;margin-bottom:24px">How a contract is marked</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px">
-      <div><span class="t tA" style="width:30px;height:30px;font-size:14px">A</span><h3 style="margin:14px 0 6px;font-size:18px">An official record</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink2)">An audit, a court case, an official statement or a revoked licence already names the contract or its contractor.</p></div>
-      <div><span class="t tB" style="width:30px;height:30px;font-size:14px">B</span><h3 style="margin:14px 0 6px;font-size:18px">A rule is broken</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink2)">The figures contradict a law or each other: an award above the approved budget, a contract above the licence limit.</p></div>
-      <div><span class="t tC" style="width:30px;height:30px;font-size:14px">C</span><h3 style="margin:14px 0 6px;font-size:18px">Several signals at once</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink2)">Three or more independent signs point the same way: tender, price, contractor's record, site.</p></div>
-    </div>
-    <p class="muted" style="margin:24px 0 0;font-size:14px">B and C marks and every decision are for the review team only. A person decides what happens next. <a href="method.html">Read the full method, tests and data sources →</a></p>
-  </section>
-
-  <section style="margin-top:40px;padding:26px 30px;background:var(--ink);color:var(--bg);border-radius:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px">
-    <div><div style="font-size:15px;font-weight:500">This week's list is sealed.</div><div style="margin-top:6px;font-size:14px;color:#B9B4A8">Each Monday's list gets a fingerprint, so it cannot be changed afterwards.</div></div>
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px"><span class="num small" id="seal"></span><a class="pill" href="ledger.html" style="color:var(--bg);border-color:#5C5850">See all weeks</a></div>
-  </section>
-
-  <footer style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;padding:44px 0 48px;font-size:13px;color:var(--muted)">
-    <div style="max-width:620px;line-height:1.6">Open data only: DPWH project list, PhilGEPS, CPES, COA audit reports, Sandiganbayan and Supreme Court decisions, PCAB. Values are budgets as listed by DPWH. Private individuals are not named. A capstone project, Lee Kuan Yew School of Public Policy.</div>
-    <div class="num" id="method"></div>
-  </footer>
-</main>
+<footer class="col" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;padding-top:40px;padding-bottom:48px;font-size:13px;color:var(--mute)">
+  <div style="max-width:640px;line-height:1.6">Open data only: DPWH project list, PhilGEPS, CPES, COA audit reports, Sandiganbayan and Supreme Court decisions, PCAB. Values are budgets as listed by DPWH. Private individuals are not named. A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.</div>
+  <div class="mono" id="method"></div>
+</footer>
+</div>
 <script src="assets/core.js"></script>
 <script>
 B.header('home', { light: true });
 B.publicData().then(p => {
-  const t = p.totals, s = t.by_status;
-  const next = new Date(p.snapshot); next.setDate(next.getDate() + ((8 - next.getDay()) % 7 || 7));
-  document.getElementById('when').innerHTML = `List of ${B.date(p.snapshot)}<br>Next read: ${B.date(next.toISOString())}`;
-  const op = t.open, w = k => (100 * (s[k] || 0) / op).toFixed(1) + '%';
-  const recent = p.years.filter(y => y.year >= 2023 && y.year <= 2025), pace = recent.reduce((a, y) => a + y.all, 0) / recent.length;
-  const card = (title, big, extra) => `<div class="card"><div class="small muted">${title}</div><div class="num" style="margin-top:8px;font-size:34px;font-weight:500;letter-spacing:-.02em">${big}</div>${extra}</div>`;
-  document.getElementById('kpis').innerHTML =
-    card('Open contracts', B.n(op), `<div style="margin-top:14px;display:flex;height:8px;border-radius:4px;overflow:hidden" role="img" aria-label="${B.n(s['On-Going'])} on-going, ${B.n(s['Not Yet Started'])} not started, ${B.n(s['For Procurement'])} in procurement"><div style="width:${w('On-Going')};background:#1B1A17"></div><div style="width:${w('Not Yet Started')};background:#8E897D"></div><div style="width:${w('For Procurement')};background:#DAD6CC"></div></div><div class="tiny" style="margin-top:10px;color:var(--ink2);line-height:1.7"><span class="num">${B.n(s['On-Going'])}</span> on-going · <span class="num">${B.n(s['Not Yet Started'])}</span> not started · <span class="num">${B.n(s['For Procurement'])}</span> in procurement</div><div class="tiny muted" style="margin-top:6px;line-height:1.6">Not counted: <span class="num">${B.n(t.reported_complete)}</span> listed as on-going but reported 100% done.</div>`) +
-    card('Value of work under way', B.peso(t.open_value, 'tn'), `<div class="tiny" style="margin-top:14px;color:var(--ink2);line-height:1.7">Budgets of on-going and not-yet-started contracts: ${(t.open_value / pace).toFixed(1)} years of new contracts at the 2023–2025 pace.</div>`) +
-    card('<span class="t tA" style="margin-right:6px">A</span>Open, with an official record', B.n(t.tiers.A), `<div class="tiny" style="margin-top:14px;color:var(--ink2);line-height:1.7">Worth <span class="num">${B.peso(t.tierA_value)}</span>. ${B.n(t.revoked_contracts)} are with a revoked licence; the rest are named in audits, cases or official statements.</div>`) +
-    card('Contractors with a revoked licence still holding work', B.n(t.revoked_firms), `<div class="tiny" style="margin-top:14px;color:var(--ink2);line-height:1.7">They hold ${B.n(t.revoked_contracts)} open contracts worth <span class="num">${B.peso(t.revoked_value)}</span>.</div>`);
+  const t = p.totals, tt = t.tiers, marked = tt.A + tt.B + tt.C;
+  document.getElementById('kick').textContent = `This week · list of ${B.date(p.snapshot)}`;
+  document.getElementById('headline').textContent = `${B.n(marked)} open public works contracts worth a closer look`;
+  document.getElementById('dek').textContent = `Of ${B.n(t.open)} open contracts in the DPWH list, BantAI marked ${B.n(marked)} this week. ${B.n(tt.A)} of them already carry an official record: an audit finding, a court case, or a revoked licence.`;
+
+  // funnel
+  const rows = [[t.contracts, 'contracts in the DPWH list'], [t.open, 'still open: procurement, not started, under way'], [marked, 'marked this week']];
+  let h = rows.map(([n, l]) => `<div class="row"><div class="lab"><div class="n">${B.n(n)}</div><div class="lt">${l}</div></div><div><div class="bar" style="width:${Math.max(0.25, 100 * n / t.contracts)}%"></div></div></div>`).join('');
+  h += `<div class="row" style="border-bottom:0"><div class="lab"><div class="lt" style="font-weight:700;color:var(--ink)">The ${B.n(marked)}, magnified</div></div><div><div style="display:flex;height:64px">` +
+    [['A', 'var(--red)', '#fff', 'Official record'], ['B', 'var(--orange)', '#2B1503', 'Rule broken'], ['C', 'var(--yellow)', '#2E2400', 'Several signals']].map(([k, bg, fg, l]) =>
+      `<div style="width:${100 * tt[k] / marked}%;background:${bg};color:${fg};padding:10px 12px;overflow:hidden"><div class="mono" style="font-size:22px;font-weight:600">${k} ${B.n(tt[k])}</div><div style="font-size:12px;font-weight:600">${l}</div></div>`).join('') + `</div></div></div>`;
+  document.getElementById('funnel').innerHTML = h;
+
+  // lead story
+  document.getElementById('revN').textContent = B.n(t.revoked_contracts);
+  document.getElementById('revText').innerHTML = `Worth <b class="mono">${B.peso(t.revoked_value)}</b>, held by <b>${B.n(t.revoked_firms)} contractors</b>. Most licences were revoked on 1 September 2025, often after the award, while DPWH still lists the work as under way or not yet started.`;
+  const fmax = Math.max(...p.firms.map(f => f.value));
+  document.getElementById('firms').innerHTML = p.firms.slice(0, 8).map(f => `<div class="hbar"><div><div style="font-weight:600">${B.esc(f.firm)}</div><div class="b" style="width:${(100 * f.value / fmax).toFixed(1)}%"></div></div><div class="mono" style="text-align:right">${f.n}</div><div class="mono" style="text-align:right">${B.peso(f.value)}</div></div>`).join('');
+
+  // where
+  const rmax = Math.max(...p.regions.map(r => r.value));
+  document.getElementById('regions').innerHTML = p.regions.slice(0, 10).map(r => `<div class="hbar"><div><div style="font-weight:600">${B.esc(r.region)}</div><div class="b" style="width:${(100 * r.value / rmax).toFixed(1)}%"></div></div><div class="mono" style="text-align:right">${r.n}</div><div class="mono" style="text-align:right">${B.peso(r.value)}</div></div>`).join('');
+  const top = p.regions[0];
+  document.getElementById('whereHead').textContent = `${top.region} leads, with ${B.n(top.n)} open contracts on record worth ${B.peso(top.value)}`;
+
+  // money
   const ys = p.years.filter(y => y.year < new Date(p.snapshot).getFullYear()), max = Math.max(...ys.map(y => y.all));
-  const share = y => Math.round(100 * y.flood / y.all);
-  const first = ys[0], peak = ys.reduce((a, y) => share(y) > share(a) ? y : a, ys[0]);
-  document.getElementById('floodTitle').textContent = `Flood control grew from ${share(first)}% to ${share(peak)}% of DPWH contract value (${first.year}–${peak.year})`;
+  const share = y => Math.round(100 * y.flood / y.all), first = ys[0], peak = ys.reduce((a, y) => share(y) > share(a) ? y : a, ys[0]);
+  document.getElementById('floodTitle').textContent = `Flood control grew from ${share(first)}% to ${share(peak)}% of DPWH contract value between ${first.year} and ${peak.year}`;
   const yr = document.getElementById('years'); yr.style.gridTemplateColumns = `repeat(${ys.length},minmax(0,1fr))`;
   yr.setAttribute('aria-label', 'Flood control share by year: ' + ys.map(y => `${y.year} ${share(y)}%`).join(', '));
-  yr.innerHTML = ys.map(y => `<div style="display:flex;flex-direction:column;justify-content:flex-end;height:100%"><span class="num" style="font-size:12px;margin-bottom:6px;${y === peak ? 'font-weight:500' : ''}">${share(y)}%</span><div style="height:${((y.all - y.flood) / max * 200).toFixed(1)}px;background:#DAD6CC"></div><div style="height:${(y.flood / max * 200).toFixed(1)}px;background:#1B1A17"></div></div>`).join('');
+  yr.innerHTML = ys.map(y => `<div style="display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative">
+    <span class="mono" style="font-size:${y === peak ? 18 : 13}px;font-weight:${y === peak ? 600 : 500};margin-bottom:6px;color:${y === peak ? 'var(--red)' : 'var(--ink)'}">${share(y)}%</span>
+    <div style="height:${((y.all - y.flood) / max * 230).toFixed(1)}px;background:#CFCAC0"></div><div style="height:${(y.flood / max * 230).toFixed(1)}px;background:${y === peak ? 'var(--red)' : 'var(--ink)'}"></div></div>`).join('');
   const yl = document.getElementById('yearLabels'); yl.style.gridTemplateColumns = yr.style.gridTemplateColumns;
-  yl.innerHTML = ys.map(y => `<span>${y.year}<br>${B.n(Math.round(y.all / 1e9))}</span>`).join('');
-  const rmax = Math.max(...p.regions.map(r => r.value));
-  document.getElementById('regions').innerHTML = p.regions.slice(0, 8).map(r => `<div style="display:grid;grid-template-columns:150px minmax(0,1fr) 44px;align-items:center;gap:12px"><span>${B.esc(r.region)}</span><div title="${B.peso(r.value)}" style="height:14px;width:${(100 * r.value / rmax).toFixed(1)}%;background:var(--a);border-radius:2px"></div><span class="num" style="text-align:right">${r.n}</span></div>`).join('') +
-    `<div class="num tiny" style="display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:12px;color:var(--faint)"><span></span><span style="display:flex;justify-content:space-between"><span>0</span><span>${B.peso(rmax)}</span></span><span></span></div>`;
-  document.getElementById('firms').innerHTML = p.firms.slice(0, 6).map((f, i, a) => `<tr><td style="padding:10px 12px 10px 0;${i < a.length - 1 ? 'border-bottom:1px solid var(--line2)' : ''}">${B.esc(f.firm)}</td><td class="num" style="text-align:right;${i < a.length - 1 ? 'border-bottom:1px solid var(--line2)' : ''}">${f.n}</td><td class="num" style="text-align:right;${i < a.length - 1 ? 'border-bottom:1px solid var(--line2)' : ''}">${B.peso(f.value)}</td></tr>`).join('');
-  document.getElementById('seal').textContent = `${B.date(p.snapshot)} · SHA-256 ${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}`;
+  yl.innerHTML = ys.map(y => `<span>${y.year}<br>₱${B.n(Math.round(y.all / 1e9))} bn</span>`).join('');
+
+  document.getElementById('nA').textContent = `${B.n(tt.A)} this week · public`;
+  document.getElementById('nB').textContent = `${B.n(tt.B)} this week · review team`;
+  document.getElementById('nC').textContent = `${B.n(tt.C)} this week · review team`;
+  document.getElementById('seal').textContent = `${B.date(p.snapshot)} · SHA-256 ${p.sha256.slice(0, 12)}…`;
   document.getElementById('method').textContent = `Method ${p.method} · updated every Monday`;
   document.getElementById('main').setAttribute('aria-busy', 'false');
 });

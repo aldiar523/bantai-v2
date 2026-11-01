@@ -10,10 +10,10 @@
 <main class="wrap" style="padding-top:28px;padding-bottom:48px">
   <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px">
     <div>
-      <h1 style="font-size:30px;letter-spacing:-.02em" id="title">Queue</h1>
+      <div class="kicker" id="kick">This week</div><h1 style="font-size:44px" id="title">Queue</h1>
       <p class="small muted" style="margin:6px 0 0" id="sub"></p>
     </div>
-    <div id="counts" style="display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)"></div>
+    <div id="counts" style="display:flex;border-top:3px solid var(--ink);background:var(--card)"></div>
   </div>
 
   <div style="margin-top:24px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
@@ -86,10 +86,10 @@ B.allContracts().then(({ list, reviewer }) => {
   FILTERS.find(f => f.key === 'region').opts = [...new Set(ROWS.map(r => r.region))].sort();
   B.publicData().then(p => {
     const t = p.totals.tiers;
-    document.getElementById('title').textContent = REV ? 'Review queue' : 'Open contracts with an official record';
+    document.getElementById('title').textContent = REV ? 'Review queue' : 'Open contracts with an official record'; document.getElementById('kick').textContent = 'List of ' + B.date(p.snapshot);
     document.getElementById('sub').innerHTML = REV ? `Open contracts marked this week. Sealed: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
       : `Mark A only. Marks B and C are for the review team. <a href="signin.html">Reviewer sign-in</a>`;
-    const box = (n, l, c) => `<div style="padding:10px 18px;border-right:1px solid var(--line2);${c ? `box-shadow:inset 0 -3px 0 var(--${c})` : ''}"><div class="num" style="font-size:20px;font-weight:500">${B.n(n)}</div><div class="tiny muted">${l}</div></div>`;
+    const box = (n, l, c) => `<div style="padding:12px 20px;border-right:1px solid var(--line2);${c ? `box-shadow:inset 0 -6px 0 var(--${c})` : ''}"><div class="num" style="font-size:26px;font-weight:600">${B.n(n)}</div><div class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">${l}</div></div>`;
     document.getElementById('counts').innerHTML = (REV ? box(p.totals.marked, 'marked') : '') + box(t.A, 'A · official', 'a') +
       (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + box(Object.keys(decisions()).length, 'decided on this device') : '');
     if (!REV) S.shown = ['region', 'amount', 'tags'];
@@ -167,7 +167,7 @@ function drawActive() {
   const act = FILTERS.filter(isSet);
   document.getElementById('fcount').textContent = act.length || '';
   const fmt = f => { const v = S.vals[f.key]; return f.type === 'range' ? `${v.lo || '…'}–${v.hi || '…'}` : f.type === 'min' ? v[0] + '+' : v.join(', '); };
-  document.getElementById('active').innerHTML = act.map(f => `<span style="display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 4px 0 12px;background:var(--card);border:1px solid var(--ink);border-radius:999px;font-size:13px"><span class="muted">${f.name}</span>${B.esc(fmt(f))}<button class="x" data-clear="${f.key}" aria-label="Remove ${f.name} filter">×</button></span>`).join('') +
+  document.getElementById('active').innerHTML = act.map(f => `<span style="display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 4px 0 12px;background:var(--card);border:1px solid var(--ink);border-radius:0;font-size:13px"><span class="muted">${f.name}</span>${B.esc(fmt(f))}<button class="x" data-clear="${f.key}" aria-label="Remove ${f.name} filter">×</button></span>`).join('') +
     (act.length ? `<button class="small" id="clearAll" style="border:0;background:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;color:var(--ink2)">Clear all</button>` : '');
   document.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { delete S.vals[b.dataset.clear]; draw(); });
   const ca = document.getElementById('clearAll'); if (ca) ca.onclick = () => { S.vals = {}; draw(); };
