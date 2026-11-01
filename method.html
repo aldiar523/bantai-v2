@@ -2,130 +2,170 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BantAI — method, process and data</title>
+<title>BantAI — method</title>
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap">
 <style>
-.doc{max-width:860px}
-.doc h2{font-size:26px;margin:56px 0 14px;letter-spacing:-.015em}
-.doc h3{font-size:17px;margin:28px 0 8px}
-.doc p,.doc li{font-size:16px;line-height:1.65;color:var(--ink2)}
-.doc table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
-.doc th{text-align:left;font-weight:500;font-size:12px;color:var(--muted);padding:8px 10px 8px 0;border-bottom:1px solid var(--ink)}
-.doc td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.5}
-.toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0}
-.toc a{font-size:13px;text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card)}
-.steps{counter-reset:s;list-style:none;padding:0}
-.steps li{counter-increment:s;position:relative;padding:0 0 18px 44px}
-.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px}
-.res{font-family:var(--mono);font-size:12px;padding:2px 8px;border-radius:5px;white-space:nowrap}
-.r-no{background:#EDE9E1;color:var(--ink2)}.r-mix{background:#FBEFD9;color:#5A3D05}.r-ok{background:#E5F1E7;color:#1F4D2B}
+body{background:#FAF9F6}
+.m{max-width:1180px;margin:0 auto;padding:56px 32px 96px;font-family:'Public Sans',system-ui,sans-serif;color:#1B1A17}
+.m h1,.m h2{font-family:'Newsreader',Georgia,serif;font-weight:600;letter-spacing:-.01em}
+.m h1{font-size:52px;line-height:1.05;margin:0;max-width:820px}
+.m .lead{font-size:20px;line-height:1.55;color:#33312C;max-width:760px;margin:22px 0 0}
+.m section{display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px;padding:40px 0;border-top:1px solid #1B1A17}
+.m section:first-of-type{margin-top:56px}
+.m h2{font-size:26px;line-height:1.2;margin:0}
+.m p,.m li{font-size:16px;line-height:1.65;color:#33312C;margin:0 0 12px}
+.m ul{margin:0;padding-left:18px}
+.m table{width:100%;border-collapse:collapse;font-size:15px}
+.m th{text-align:left;font-weight:600;font-size:13px;padding:0 16px 10px 0;border-bottom:1px solid #1B1A17}
+.m td{padding:12px 16px 12px 0;border-bottom:1px solid #DDD9D0;vertical-align:top;line-height:1.5;color:#33312C}
+.m td:first-child{color:#1B1A17;font-weight:500}
+.m .two{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.m .two h3{font-size:15px;font-weight:600;margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid #1B1A17}
+.m .no h3{border-bottom-color:#B9B4A8}
+.m .mk{display:inline-block;min-width:22px;padding:1px 6px;font-family:'Geist Mono',monospace;font-size:12px;font-weight:600;text-align:center;border-radius:2px;margin-right:8px}
+.m ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+.m ol.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;padding:12px 0;border-bottom:1px solid #DDD9D0;margin:0}
+.m ol.steps li::before{content:counter(s,decimal-leading-zero);font-family:'Geist Mono',monospace;font-size:13px;color:#6B675E;padding-top:3px}
+.m a{color:#1B1A17;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+@media (max-width:820px){.m section{grid-template-columns:1fr;gap:16px}.m .two{grid-template-columns:1fr}.m h1{font-size:38px}}
 </style>
 </head>
 <body>
 <header id="top"></header>
-<main class="wrap doc" style="padding-top:32px;padding-bottom:72px">
-  <p class="label">Method v2.1 · 1 Nov 2026</p>
-  <h1 style="font-size:40px">How BantAI works</h1>
-  <p style="font-size:18px;margin-top:16px">BantAI reads the full list of DPWH public works contracts every week and marks open contracts worth a closer look. It does not estimate the probability that a contract is corrupt. A mark is a request to check, never an accusation.</p>
-  <nav class="toc" aria-label="On this page"><a href="#goal">Goal</a><a href="#process">Weekly process</a><a href="#marks">The three marks</a><a href="#checks">Every check</a><a href="#evidence">What we tested</a><a href="#ai">AI review</a><a href="#data">Data sources</a><a href="#rules">Publication rules</a><a href="#limits">Limits</a></nav>
+<main class="m">
+  <h1>A weekly list of public works contracts worth checking.</h1>
+  <p class="lead">BantAI reads every contract in the DPWH project list each Monday and marks the open ones that an auditor, a journalist or a citizen group should look at first, with the reason and the source for each mark.</p>
 
-  <h2 id="goal">Goal, and why we changed course</h2>
-  <p>The first version ranked contracts by red flags weighted by how well they predicted contract terminations and citizen complaints. Two problems followed. A termination is not corruption. And when the flags were tested against documented problem contracts (COA audit findings, the ghost-project list, Sandiganbayan charge sheets), most did not separate them from ordinary contracts.</p>
-  <p>Only about 260 problem contracts can be tied to a DPWH contract ID in open sources. That is too few to prove that any single flag predicts wrongdoing. So version 2 does not ask a flag to prove itself on past cases. Each check must instead rest on <b>the law</b>, <b>an official record</b>, or <b>the mechanism of a known scheme</b>, and the list relies on several independent signs pointing the same way.</p>
-  <p>The aim is practical: give auditors, journalists and civil society a short, explained list of open contracts, while the money is still being spent.</p>
+  <section>
+    <h2>Goal</h2>
+    <div>
+      <p>Point limited audit and reporting time at the contracts most likely to need it, while the work is still under way and the money is still being paid.</p>
+      <p>Every mark is a request to check. It is not a finding, and it never says that anyone did wrong.</p>
+    </div>
+  </section>
 
-  <h2 id="process">Weekly process</h2>
-  <ol class="steps">
-    <li><b>Read.</b> Every Monday the full DPWH project list is saved (about 267,000 contracts), with the changes since last week.</li>
-    <li><b>Join.</b> Each contract is joined, by its contract ID, to PhilGEPS notices and awards, bid records, government performance evaluations (CPES), PCAB licences and sanctions, and the register of documented problem contracts.</li>
-    <li><b>Check.</b> Every open contract (for procurement, not yet started, on-going) goes through the official-record checks, the rule checks and the seven signal families below.</li>
-    <li><b>Rank.</b> Mark A first, then B, then C (three or more families). Inside each mark, the largest contracts first. No office may hold more than 30% of the top 50.</li>
-    <li><b>Seal.</b> The list is saved and its SHA-256 fingerprint is written to a public, append-only <a href="ledger.html">ledger</a>. Later charges, audits and statements can be compared with what was listed before they became public.</li>
-    <li><b>Review.</b> Reviewers read the documents, may ask for an AI review, and record a decision: escalate, monitor, no concern, or data error. A person decides.</li>
-  </ol>
+  <section>
+    <h2>Who it is for</h2>
+    <table>
+      <tbody>
+        <tr><td style="width:220px">Auditors and inspectors</td><td>A short list per region and office, with what to ask for: documents, dates, site checks.</td></tr>
+        <tr><td>Journalists</td><td>Contracts that already carry an official record, and the documents to start from.</td></tr>
+        <tr><td>Civil society and community monitors</td><td>Where open projects are, how far along they are said to be, and what to look for on site.</td></tr>
+      </tbody>
+    </table>
+  </section>
 
-  <h2 id="marks">The three marks</h2>
-  <table>
-    <thead><tr><th style="width:120px">Mark</th><th>Meaning</th><th style="width:160px">Who sees it</th></tr></thead>
-    <tbody>
-      <tr><td><span class="t tA">A</span> Official record</td><td>An audit, a court case, an official statement, the ghost-project list, or a licence revoked or suspended by PCAB already names the contract or its contractor.</td><td>Public</td></tr>
-      <tr><td><span class="t tB">B</span> Rule broken</td><td>The figures contradict a law or each other. Shown publicly only after a document check confirms at least 70% of a sample of flags, with data errors under 30%.</td><td>Review team</td></tr>
-      <tr><td><span class="t tC">C</span> Several signals</td><td>Three or more of six independent signal families fire on the same contract. Based on how schemes work; not yet shown statistically.</td><td>Review team</td></tr>
-    </tbody>
-  </table>
+  <section>
+    <h2>What it can and cannot do</h2>
+    <div class="two">
+      <div><h3>It can</h3><ul>
+        <li>Read all 267,000 contracts in the DPWH list every week.</li>
+        <li>Show which open contracts already have an official record: an audit finding, a court case, a revoked licence.</li>
+        <li>Find contracts whose figures break a rule, such as an award above the approved budget.</li>
+        <li>Show where several independent warning signs point the same way.</li>
+        <li>Seal each week's list, so it can be checked later against what comes out.</li>
+      </ul></div>
+      <div class="no"><h3>It cannot</h3><ul>
+        <li>Say whether a contract is corrupt, or how likely it is.</li>
+        <li>See what is not in open data: payments, site reality, private agreements.</li>
+        <li>Prove yet that its warning signs predict wrongdoing: too few past cases carry a contract ID.</li>
+        <li>Correct DPWH's data. Statuses, dates and coordinates are as DPWH gives them.</li>
+        <li>Replace a site visit or a document check.</li>
+      </ul></div>
+    </div>
+  </section>
 
-  <h2 id="checks">Every check</h2>
-  <p>Each contract page lists every check as triggered, clear, or not checked because data are missing. A family counts once however many of its flags fire; flags built from the same fields sit in the same family, so one fact is never counted twice.</p>
-  <h3>Official record (A)</h3>
-  <table><thead><tr><th>Check</th><th>Source</th></tr></thead><tbody>
-    <tr><td>The contract is named in a COA audit finding, the ghost-project list, an official action or a Sandiganbayan case</td><td>Register of documented problem contracts; status words as given by the source</td></tr>
-    <tr><td>A contractor's licence, including any joint-venture partner's, is revoked or suspended</td><td>PCAB sanctions list</td></tr>
-    <tr><td>The DPWH list marks the licence as [REVOKED]</td><td>DPWH project list</td></tr>
-  </tbody></table>
-  <h3>Rules (B)</h3>
-  <table><thead><tr><th>Check</th><th>Basis</th></tr></thead><tbody>
-    <tr><td>Award above the approved budget (R1)</td><td>RA 9184 Sec. 31: the approved budget for the contract is the ceiling</td></tr>
-    <tr><td>Contract above the contractor's licence category limit (R7)</td><td>PCAB allowable range of contract cost (table to be verified against the original)</td></tr>
-    <tr><td>Completed in under a quarter of the contract time (R5)</td><td>Logic: very fast completion of a large contract needs a document check</td></tr>
-  </tbody></table>
-  <h3>Signal families (C)</h3>
-  <table><thead><tr><th style="width:150px">Family</th><th>Flags</th><th style="width:210px">Why it matters</th></tr></thead><tbody>
-    <tr><td>Tender</td><td>One bidder with an award at 98%+ of the budget; award at 94% or less (an unusually low bid); award 8 days or less after bid opening</td><td>No price pressure; delivery risk; no time for evaluation</td></tr>
-    <tr><td>Price</td><td>Road price per km above the 95th percentile of roads of the same year and region</td><td>Inflated estimate</td></tr>
-    <tr><td>Contractor</td><td>A contract terminated after work started in the 3 years before; a third of earlier evaluations behind schedule; 2+ citizen reports on other projects</td><td>Track record</td></tr>
-    <tr><td>Concentration</td><td>The contractor holds half or more of the office's contract value that year</td><td>Capture of an office</td></tr>
-    <tr><td>Site</td><td>Same site funded again within 3 years; a split cluster (same office, contractor and work within 60 days and 1 km); duplicate entries</td><td>Paying twice; splitting to avoid thresholds</td></tr>
-    <tr><td>Licence limit</td><td>Contract above the licence category limit</td><td>Contractor not qualified for the size</td></tr>
-    <tr><td>Delivery</td><td>Government evaluation found 15%+ slippage or a Poor rating; possibly stalled</td><td>GPPB Circular 03-2019 obliges termination proceedings at 15%</td></tr>
-  </tbody></table>
-  <p>Shown as context only: the province's share of elected officials from political families (it marks every contract in a province, so it cannot tell contracts apart).</p>
+  <section>
+    <h2>The three marks</h2>
+    <table>
+      <thead><tr><th style="width:220px">Mark</th><th>Meaning</th><th style="width:150px">Visible to</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mk" style="background:#C4362C;color:#fff">A</span>Official record</td><td>An audit, a court case, an official statement, the ghost-project list, or a PCAB licence revocation already names the contract or its contractor.</td><td>Everyone</td></tr>
+        <tr><td><span class="mk" style="background:#EE8A3A;color:#3D1E05">B</span>Rule broken</td><td>The figures contradict a law or each other. Public only after a document check confirms at least 70% of a sample.</td><td>Review team</td></tr>
+        <tr><td><span class="mk" style="background:#F4D35E;color:#3F3200">C</span>Several signals</td><td>Three or more of six independent signal families fire on the same contract.</td><td>Review team</td></tr>
+      </tbody>
+    </table>
+  </section>
 
-  <h2 id="evidence">What we tested, and what we found</h2>
-  <p>Every test is written down before it runs, part of the offices is held back to confirm results, and negative results are kept. Full protocol in the project repository.</p>
-  <table><thead><tr><th>Test</th><th>Result</th><th style="width:150px">Reading</th></tr></thead><tbody>
-    <tr><td>Satellite change at the site vs ghost projects</td><td>Change found at 61% of ordinary sites and 61% of ghost sites</td><td><span class="res r-no">does not work</span></td></tr>
-    <tr><td>Bid rotation among the same firms</td><td>A link seen in a sample disappeared on complete data</td><td><span class="res r-no">does not work</span></td></tr>
-    <tr><td>Same site funded again</td><td>Not more common among audit findings or citizen complaints</td><td><span class="res r-no">not shown</span></td></tr>
-    <tr><td>Split cluster</td><td>61% of listed ghost projects vs 35% of others in the same office; 6 of 19 charged contracts</td><td><span class="res r-mix">promising, few cases</span></td></tr>
-    <tr><td>Several families at once</td><td>1.09 times more common among known problem contracts at 2+ families; too few cases to test 3+</td><td><span class="res r-mix">not yet shown</span></td></tr>
-    <tr><td>Rule checks</td><td>Checked against documents, not past cases; public only at 70%+ confirmed</td><td><span class="res r-mix">document check pending</span></td></tr>
-  </tbody></table>
-  <p>In short: open data alone cannot yet prove which signals predict corruption, because too few problem contracts carry an ID. BantAI therefore relies on law, official records and mechanism, labels each mark by its basis, and seals each week's list so it can be tested forward.</p>
+  <section>
+    <h2>Every check</h2>
+    <div>
+      <p>Each contract page shows every check as triggered, clear, or not checked because data are missing.</p>
+      <table style="margin-top:12px">
+        <thead><tr><th style="width:220px">Check</th><th>What triggers it</th><th style="width:240px">Basis</th></tr></thead>
+        <tbody>
+          <tr><td>Official record</td><td>Named in a COA audit finding, the ghost-project list, an official action or a Sandiganbayan case</td><td>The record itself; status words as the source gives them</td></tr>
+          <tr><td>Licence</td><td>Licence of the contractor, or of any joint-venture partner, revoked or suspended</td><td>PCAB sanctions list; DPWH list</td></tr>
+          <tr><td>Award above budget</td><td>Award amount higher than the approved budget</td><td>RA 9184 Sec. 31</td></tr>
+          <tr><td>Licence limit</td><td>Contract larger than the contractor's licence category allows</td><td>PCAB allowable range of contract cost</td></tr>
+          <tr><td>Tender</td><td>One bidder at 98%+ of budget; award at 94% or less; award 8 days or less after bid opening</td><td>No price pressure; delivery risk; no time to evaluate</td></tr>
+          <tr><td>Price</td><td>Road price per km above the 95th percentile for the same year and region</td><td>Inflated estimate</td></tr>
+          <tr><td>Contractor record</td><td>A contract terminated after work started; a third of past evaluations behind schedule; citizen reports on other projects</td><td>Track record</td></tr>
+          <tr><td>Concentration</td><td>One contractor holds half of an office's contract value in a year</td><td>Capture of an office</td></tr>
+          <tr><td>Site</td><td>Same site funded again within 3 years; a cluster of small contracts split within 60 days and 1 km; duplicate entries</td><td>Paying twice; splitting to avoid thresholds</td></tr>
+          <tr><td>Delivery</td><td>Government evaluation found 15%+ slippage or a Poor rating; possibly stalled</td><td>GPPB Circular 03-2019</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:14px">The province's share of officials from political families is shown as context. It does not count, because it is the same for every contract in a province.</p>
+    </div>
+  </section>
 
-  <h2 id="ai">AI review</h2>
-  <p>A reviewer can ask for an AI review of a contract. It summarises the file, looks for ordinary explanations (a calamity, a design change, a joint venture, a project finished but not updated), searches news, official statements and court records, and suggests the next document and site checks. Every outside claim links to a source it opened. It is advice: it never changes a mark or a decision, never calls anyone corrupt, and is seen by reviewers only. Satellite images of the site over time (Esri World Imagery archive) are on each contract page for the reviewer's own eyes; automated change detection did not work in our tests.</p>
+  <section>
+    <h2>Each week</h2>
+    <ol class="steps">
+      <li>Save the full DPWH project list and what changed since last week.</li>
+      <li>Join each contract, by its ID, to PhilGEPS notices and awards, bid records, performance evaluations, PCAB licences and the register of documented problem contracts.</li>
+      <li>Run every check on every open contract. Contracts reported 100% done count as complete, even if DPWH still lists them as on-going.</li>
+      <li>Rank: mark A, then B, then C; larger contracts first; no office above 30% of the top 50.</li>
+      <li>Seal the list with a SHA-256 fingerprint in the public <a href="ledger.html">ledger</a>.</li>
+      <li>Reviewers read the documents, may ask for an AI review, and record a decision. A person decides.</li>
+    </ol>
+  </section>
 
-  <h2 id="data">Data sources</h2>
-  <table><thead><tr><th>Source</th><th>What we use</th><th style="width:150px">Refresh</th></tr></thead><tbody>
-    <tr><td><a href="https://www.dpwh.gov.ph" target="_blank" rel="noopener">DPWH project list</a></td><td>Every contract: office, budget, contractor, status, progress, dates, coordinates</td><td>Weekly copy since 31 Oct 2026</td></tr>
-    <tr><td><a href="https://www.philgeps.gov.ph" target="_blank" rel="noopener">PhilGEPS</a> (via BetterGov open data)</td><td>Notices and awards: approved budget, award amount and date, procurement mode</td><td>Periodic</td></tr>
-    <tr><td>DPWH bid records</td><td>Bidders, bid opening and award dates for part of 2016–2021</td><td>Fixed sample</td></tr>
-    <tr><td>CPES (DPWH, GPPB, CIAP)</td><td>53,873 government performance evaluations of contractors</td><td>Quarterly releases</td></tr>
-    <tr><td><a href="https://pcab.construction.gov.ph" target="_blank" rel="noopener">PCAB</a></td><td>Licence categories and sanctions</td><td>Periodic</td></tr>
-    <tr><td><a href="https://www.coa.gov.ph" target="_blank" rel="noopener">COA</a> annual audit reports</td><td>Contracts above the allowable estimate, quantity shortfalls</td><td>Yearly</td></tr>
-    <tr><td><a href="https://sb.judiciary.gov.ph" target="_blank" rel="noopener">Sandiganbayan</a>, Supreme Court (Lawphil)</td><td>Charge sheets and decisions naming DPWH contracts</td><td>As published</td></tr>
-    <tr><td>House CPBRD inventory, Ateneo dynasty data</td><td>Political-family shares by province (context only)</td><td>Per election</td></tr>
-    <tr><td>OpenStreetMap, Esri World Imagery and Wayback</td><td>Maps and satellite images on contract pages</td><td>Live</td></tr>
-  </tbody></table>
+  <section>
+    <h2>How reliable it is</h2>
+    <div>
+      <p>Marks A and B rest on records and rules, so their reliability is a question of data quality, which reviewers check on documents. Mark C rests on how schemes work. We tested it against the problem contracts that can be tied to an ID; there are too few to show that it beats a random pick, so it is labelled "not yet shown". Two tempting methods did not work and are not used: automatic detection of change in satellite images, and detecting bid rotation among firms.</p>
+      <p>Each weekly list is sealed so that this can be tested forward, as new audits, cases and statements become public.</p>
+    </div>
+  </section>
 
-  <h2 id="rules">Publication and data protection</h2>
-  <ul>
-    <li>A mark is a request to look. Status words come from the source ("charged", "revoked"), never stronger.</li>
-    <li>Private individuals are not named: no company officers, owners or employees, even where public registers list them.</li>
-    <li>Marks B and C, AI reviews and decisions are encrypted on this site and open only with the review team's key, in the reviewer's own browser. The key is never sent anywhere.</li>
-    <li>The code and working data stay in a private repository; this site holds only built pages, public data and the encrypted reviewer file.</li>
-    <li>Open, legal data only. No requests for non-public records.</li>
-  </ul>
+  <section>
+    <h2>AI review</h2>
+    <div>
+      <p>On request, a reviewer gets an AI review of one contract: a summary, ordinary explanations to rule out, what news, official statements and court records say, and the next document checks. Every outside claim links to a source. It advises; it never changes a mark or a decision, and only the review team sees it.</p>
+    </div>
+  </section>
 
-  <h2 id="limits">Limits</h2>
-  <ul>
-    <li>DPWH statuses lag: about 7,300 contracts report 100% done but are still listed as on-going. Since v2.1 they count as "reported complete" and leave the open-contract queue; a contract re-enters if its progress drops below 100%.</li>
-    <li>Coordinates are as DPWH gives them. For buildings they mark the building site; where many contracts share a point it may be an office or a placeholder.</li>
-    <li>Contracts still in procurement rarely reach the list: the winner and bids are not known yet.</li>
-    <li>Tender and price checks cover only contracts with bid records or stated road lengths; a missing check lowers a score, it never raises it.</li>
-    <li>No signal family is yet shown to beat random on known problem contracts. The weekly sealed lists exist so that this can be tested as new cases become public.</li>
-  </ul>
-  <p class="small muted" style="margin-top:40px">A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.</p>
+  <section>
+    <h2>Data</h2>
+    <table>
+      <thead><tr><th style="width:220px">Source</th><th>Used for</th><th style="width:150px">Updated</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.dpwh.gov.ph" target="_blank" rel="noopener">DPWH project list</a></td><td>Every contract: office, budget, contractor, status, progress, dates, location</td><td>Weekly</td></tr>
+        <tr><td><a href="https://www.philgeps.gov.ph" target="_blank" rel="noopener">PhilGEPS</a></td><td>Approved budget, award amount and date, procurement mode</td><td>Periodic</td></tr>
+        <tr><td>DPWH bid records</td><td>Bidders, bid opening and award dates (part of 2016–2021)</td><td>Fixed</td></tr>
+        <tr><td>CPES</td><td>Government performance evaluations of contractors</td><td>Quarterly</td></tr>
+        <tr><td><a href="https://pcab.construction.gov.ph" target="_blank" rel="noopener">PCAB</a></td><td>Licence categories and sanctions</td><td>Periodic</td></tr>
+        <tr><td><a href="https://www.coa.gov.ph" target="_blank" rel="noopener">COA</a></td><td>Audit findings on DPWH contracts</td><td>Yearly</td></tr>
+        <tr><td><a href="https://sb.judiciary.gov.ph" target="_blank" rel="noopener">Sandiganbayan</a>, Supreme Court</td><td>Cases naming DPWH contracts</td><td>As published</td></tr>
+        <tr><td>OpenStreetMap, Esri World Imagery</td><td>Maps and satellite images</td><td>Live</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Data protection</h2>
+    <ul>
+      <li>Status words come from the source ("charged", "revoked"), never stronger.</li>
+      <li>No private individual is named: no company officers, owners or employees.</li>
+      <li>Marks B and C, AI reviews and decisions are encrypted and open only with the review team's key, in the reviewer's own browser.</li>
+      <li>Open, legal data only.</li>
+    </ul>
+  </section>
+
+  <p style="margin-top:48px;font-size:13px;color:#6B675E">Method v2.1. A capstone project, Lee Kuan Yew School of Public Policy, National University of Singapore.</p>
 </main>
 <script src="assets/core.js"></script>
 <script>B.header('method');</script>
