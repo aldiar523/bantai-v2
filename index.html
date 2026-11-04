@@ -154,7 +154,7 @@ B.publicData().then(p => {
 
   // lead story
   document.getElementById('revN').textContent = B.n(t.revoked_contracts);
-  document.getElementById('revText').innerHTML = `Worth <b class="mono">${B.peso(t.revoked_value)}</b>, held by <b>${B.n(t.revoked_firms)} contractors</b>. Most licences were revoked on 1 September 2025, often after the award, while DPWH still lists the work as under way or not yet started.`;
+  document.getElementById('revText').innerHTML = `Worth <b class="mono">${B.peso(t.revoked_value)}</b>, tied to <b>${B.n(t.revoked_firms)} firms</b> with revoked licences. ${B.n(t.revoked_jv_contracts)} of these contracts (${B.peso(t.revoked_jv_value)}) are joint ventures, counted in full even when one partner was revoked. Most licences were revoked on 1 September 2025, often after the award, while DPWH still lists the work as under way or not yet started.`;
   const fmax = Math.max(...p.firms.map(f => f.value));
   document.getElementById('firms').innerHTML = p.firms.slice(0, 8).map(f => `<div class="hbar"><div><div style="font-weight:600;font-size:13px">${B.esc(f.firm)}</div><div class="b" style="width:${(100 * f.value / fmax).toFixed(1)}%"></div></div><div class="mono">${f.n}</div><div class="mono">${B.peso(f.value)}</div></div>`).join('');
 
