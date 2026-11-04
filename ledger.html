@@ -47,11 +47,10 @@ function parseCsv(text) {
   const head = rows.shift() || [];
   return rows.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
 }
-// The file this viewer may download: reviewers the full sealed list, everyone else the public copy (mark A).
+// Downloads are for signed-in reviewers only: the full sealed list, opened with the team key.
 async function getCsv(l) {
-  if (REV) { const d = await B.openEnc(`data/lists/${l.file}.enc.json`); if (!d) throw new Error('key'); return { text: d.csv, name: l.file, seal: l.sha256 }; }
-  const r = await fetch(`data/lists/${l.public_file}`, { cache: 'no-cache' }); if (!r.ok) throw new Error('file');
-  return { text: await r.text(), name: l.public_file, seal: l.public_seal };
+  const d = await B.openEnc(`data/lists/${l.file}.enc.json`); if (!d) throw new Error('key');
+  return { text: d.csv, name: l.file, seal: l.sha256 };
 }
 function loadScript(src) {
   return new Promise((ok, no) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
@@ -63,33 +62,31 @@ async function makePdf(l, got) {
   const rows = parseCsv(got.text), title = `Ledger as of ${longDate(l.snapshot_date)}`;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(`BantAI: ${title}`, 36, 40);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-  doc.text(`Method ${l.method}. ${rows.length} contracts${REV ? ', full list (review team only)' : ', public copy: mark A only'}. A mark is a request to check, never a finding.`, 36, 56);
+  doc.text(`Method ${l.method}. ${rows.length} contracts, full list (review team only). A flag is a request to check, never a finding.`, 36, 56);
   doc.text(`Digital seal of the CSV: ${got.seal}`, 36, 68);
   doc.text('This PDF is a readable copy. The seal protects the CSV file; check it on the ledger page.', 36, 80);
   doc.autoTable({ startY: 90, margin: { left: 36, right: 36, bottom: 36 }, styles: { fontSize: 7, cellPadding: 3, overflow: 'linebreak' }, headStyles: { fillColor: [18, 18, 18] },
-    head: [['No.', 'Mark', 'Contract', 'Office', 'PHP million', 'Contractor', 'Status', 'Why it is listed']],
+    head: [['No.', 'Flag', 'Contract', 'Office', 'PHP million', 'Contractor', 'Status', 'Why it is listed']],
     columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 26 }, 2: { cellWidth: 52 }, 3: { cellWidth: 90 }, 4: { cellWidth: 44, halign: 'right' }, 5: { cellWidth: 130 }, 6: { cellWidth: 50 } },
-    body: rows.map(r => [r.rank, r.tier, r.contract_id, clean(r.office), (+r.amount_php / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), clean(r.contractor), clean(r.status), clean(r.official_reasons ?? r.reasons)]),
+    body: rows.map(r => [r.rank, r.tier, r.contract_id, clean(r.office), (+r.amount_php / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), clean(r.contractor), clean(r.status), clean(r.reasons)]),
     didDrawPage: () => { doc.setFontSize(7.5); doc.text(`${title} · page ${doc.getNumberOfPages()}`, 36, doc.internal.pageSize.getHeight() - 16); } });
   return doc.output('blob');
 }
 B.publicData().then(p => {
   LEDGER = p.ledger;
-  document.getElementById('scope').textContent = REV
-    ? 'You are signed in, so downloads are the full sealed lists with marks A, B and C. Please do not share them outside the review team.'
-    : 'Public downloads hold mark A only, with their own seal. Marks B and C stay with the review team, so the full list is shown here by its seal alone.';
+  document.getElementById('scope').innerHTML = REV
+    ? 'You are signed in, so you can download the full sealed lists. Please do not share them outside the review team.'
+    : 'Downloads are for the review team. <a href="signin.html">Reviewer sign-in</a>. Anyone can see the seals here.';
   const latest = {}; p.ledger.forEach((l, i) => { latest[l.snapshot_date] = i; });
   document.getElementById('rows').innerHTML = p.ledger.map((l, i) => {
     const t = l.by_tier, isLast = latest[l.snapshot_date] === i;
-    const seal = REV ? l.sha256 : l.public_seal;
     return { i, html: `<article class="lg ${i === p.ledger.length - 1 ? '' : 'old'}">
       <h2>Ledger as of ${longDate(l.snapshot_date)}${i === p.ledger.length - 1 ? '<span class="lg-tag">In force</span>' : !isLast ? '<span class="lg-tag">Replaced</span>' : ''}</h2>
-      <p class="small muted" style="margin:6px 0 0">Method ${B.esc(l.method)} · ${B.n(l.queue)} contracts marked: A ${B.n(t.A)}, B ${B.n(t.B)}, C ${B.n(t.C)}${!isLast ? ' · kept as sealed; a later method re-sealed this date' : ''}</p>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center">
+      <p class="small muted" style="margin:6px 0 0">Method ${B.esc(l.method)} · ${B.n(l.queue)} contracts flagged: A ${B.n(t.A)}, B ${B.n(t.B)}, C ${B.n(t.C)}${!isLast ? ' · kept as sealed; a later method re-sealed this date' : ''}</p>
+      ${REV ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center">
         <button class="btn dark" data-dl="csv" data-i="${i}">Download CSV</button><button class="btn" data-dl="pdf" data-i="${i}">Download PDF</button>
-        <span class="small muted">${REV ? 'Full list' : `Public copy: ${B.n(l.public_rows)} mark A contracts`}</span><span class="small" role="status" id="msg${i}"></span></div>
-      <div class="lg-seal"><b>Proof the file wasn't changed</b><code>${B.esc(seal)}</code>
-      ${REV ? '' : `<span class="tiny muted" style="display:block;margin-top:8px">Digital seal of the full list, with marks B and C:</span><code style="margin-top:2px">${B.esc(l.sha256)}</code>`}</div></article>` };
+        <span class="small" role="status" id="msg${i}"></span></div>` : ''}
+      <div class="lg-seal"><b>Proof the file wasn't changed</b><code>${B.esc(l.sha256)}</code></div></article>` };
   }).reverse().map(x => x.html).join('');
   document.getElementById('rows').addEventListener('click', async e => {
     const b = e.target.closest('[data-dl]'); if (!b) return;
@@ -110,9 +107,9 @@ document.getElementById('chk').onchange = async e => {
   const f = e.target.files[0], out = document.getElementById('chkRes'); if (!f) return;
   out.textContent = 'Checking…';
   const h = await hex(await f.arrayBuffer());
-  const full = LEDGER.filter(l => l.sha256 === h), pub = LEDGER.filter(l => l.public_seal === h);
+  const full = LEDGER.filter(l => l.sha256 === h);
   const names = a => [...new Set(a.map(l => `Ledger as of ${longDate(l.snapshot_date)} (method ${l.method})`))].join('; ');
-  out.textContent = full.length ? `Seal intact. This is the full list: ${names(full)}.` : pub.length ? `Seal intact. This is the public copy: ${names(pub)}.` : 'Seal broken. This file does not match any list in the ledger, so it was changed or is not a BantAI list.';
+  out.textContent = full.length ? `Seal intact: ${names(full)}.` : 'Seal broken. This file does not match any list in the ledger, so it was changed or is not a BantAI list.';
   e.target.value = '';
 };
 </script>

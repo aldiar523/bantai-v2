@@ -29,6 +29,63 @@ const B = (() => {
     if (!pass) return null;
     return decrypt(await (await fetch(url, { cache: 'no-cache' })).json(), pass.trim());
   }
+  /* Team review decisions. Sent encrypted through the relay, so every reviewer sees them within minutes; an hourly job
+     then saves them in the private repository (site_v2/decision_intake.py) and they come back in the reviewer bundle.
+     The topic and the key come from the team key, so only people with that key can read or write them. */
+  const LOCAL = 'bantai-decisions';
+  const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL)) || {}; } catch (e) { return {}; } };
+  const writeLocal = v => { try { localStorage.setItem(LOCAL, JSON.stringify(v)); } catch (e) { /* the relay still has it */ } };
+  let rel = null;
+  async function relayKey() {
+    if (rel) return rel;
+    const pass = sessionStorage.getItem(KEY); if (!pass) return null;
+    const te = new TextEncoder(), raw = te.encode(pass.trim());
+    const hex = [...new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode('bantai-decisions-topic|' + pass.trim())))].map(x => x.toString(16).padStart(2, '0')).join('');
+    const base = await crypto.subtle.importKey('raw', raw, 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: te.encode('bantai-decisions-v1'), iterations: 250000 }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    return (rel = { key, topic: 'bantai-dec-' + hex.slice(0, 24) });
+  }
+  const toB64 = u => { let s = ''; const b = new Uint8Array(u); for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(s); };
+  async function sendReview(rec) {
+    const r = await relayKey(); if (!r) return false;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, r.key, new TextEncoder().encode(JSON.stringify(rec)));
+    try { return (await fetch('https://ntfy.sh/' + r.topic, { method: 'POST', body: JSON.stringify({ v: 1, iv: toB64(iv), ct: toB64(ct) }) })).ok; } catch (e) { return false; }
+  }
+  async function pollReviews() {
+    const r = await relayKey(), out = []; if (!r) return out;
+    let lines = [];
+    try { lines = (await (await fetch(`https://ntfy.sh/${r.topic}/json?poll=1&since=12h`)).text()).split('\n'); } catch (e) { return out; }
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const m = JSON.parse(line);
+        const body = m.attachment && m.attachment.url ? await (await fetch(m.attachment.url)).text() : m.message;
+        const env = JSON.parse(body);
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(env.iv) }, r.key, b64(env.ct));
+        out.push(JSON.parse(new TextDecoder().decode(pt)));
+      } catch (e) { /* not ours, or expired */ }
+    }
+    return out;
+  }
+  // Latest decision per contract across the team. A decision saved here that has not reached the team yet is sent again.
+  async function reviews() {
+    const d = await reviewerData(); if (!d) return {};
+    const out = { ...(d.reviews || {}) };
+    const take = x => { if (x && x.id && String(x.at || '') >= String((out[x.id] || {}).at || '')) out[x.id] = x; };
+    const relayed = await pollReviews(); relayed.forEach(take);
+    const local = readLocal();
+    for (const [id, x] of Object.entries(local)) {
+      if (String(x.at || '') > String((out[id] || {}).at || '')) { const rec = { ...x, id }; out[id] = rec; sendReview(rec); }
+    }
+    writeLocal(Object.fromEntries(Object.entries(out).map(([k, v]) => [k, v])));
+    return out;
+  }
+  async function saveReview(id, rec) {
+    const full = { ...rec, id, at: rec.at || new Date().toISOString() };
+    const local = readLocal(); local[id] = full; writeLocal(local);
+    return sendReview(full);
+  }
   const isReviewer = () => !!sessionStorage.getItem(KEY);
   function signOut() { sessionStorage.removeItem(KEY); location.href = 'index.html'; }
 
@@ -71,5 +128,5 @@ const B = (() => {
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const tierName = { A: 'Official record', B: 'Rule triggered', C: 'Risk signals' };
 
-  return { publicData, reviewerData, openEnc, allContracts, isReviewer, header, n, peso, date, esc, tierName, signOut };
+  return { publicData, reviewerData, openEnc, reviews, saveReview, allContracts, isReviewer, header, n, peso, date, esc, tierName, signOut };
 })();

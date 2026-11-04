@@ -20,7 +20,7 @@ const M = document.getElementById('main');
 B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   const c = list.find(x => x.id === id);
   if (!c) {
-    M.innerHTML = `<div class="lock"><h1 style="font-size:28px">Not available</h1><p class="muted" style="line-height:1.55">${id ? `Contract <span class="num">${B.esc(id)}</span> is not in this week's public list. ${reviewer ? '' : 'If it carries mark B or C, <a href="signin.html">sign in as a reviewer</a>.'}` : 'No contract ID given.'}</p><p><a href="queue.html">← Back to the list</a></p></div>`;
+    M.innerHTML = `<div class="lock"><h1 style="font-size:28px">Not available</h1><p class="muted" style="line-height:1.55">${id ? `Contract <span class="num">${B.esc(id)}</span> is not in this week's public list. ${reviewer ? '' : 'If it carries flag B or C, <a href="signin.html">sign in as a reviewer</a>.'}` : 'No contract ID given.'}</p><p><a href="queue.html">← Back to the list</a></p></div>`;
     return;
   }
   document.title = `BantAI — ${c.id}`;
@@ -67,7 +67,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
     : `<p class="small muted" style="margin:6px 0 0;line-height:1.5">No document links in our data for this contract. Search the contract ID on the DPWH transparency portal or PhilGEPS.</p>`;
 
   function matrix(m) {
-    const dot = st => st === 'fired' ? '<span title="triggered" style="flex:none;width:12px;height:12px;border-radius:50%;background:var(--ink);margin-top:4px"></span>'
+    const dot = st => st === 'fired' ? '<span title="triggered" style="flex:none;width:12px;height:12px;border-radius:50%;background:var(--red);margin-top:4px"></span>'
       : st === 'clear' ? '<span title="checked, clear" style="flex:none;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--faint);box-sizing:border-box;margin-top:4px"></span>'
       : '<span title="not checked" style="flex:none;width:12px;height:2px;background:#C9C4B8;margin-top:9px"></span>';
     const row = it => `<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:14px;${it.status === 'fired' ? 'font-weight:500' : it.status === 'clear' ? '' : 'color:var(--faint)'}">${dot(it.status)}<span>${B.esc(it.name)}${it.why ? `<span class="tiny" style="display:block;color:var(--faint);font-weight:400">${B.esc(it.why)}</span>` : ''}</span></div>`;
@@ -78,8 +78,8 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
     const cBody = fams.map(f => `<div style="padding:6px 0;border-top:1px solid var(--line2)"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;padding-top:4px"><span>${B.esc(f.family)}</span><span class="tiny" style="font-weight:500;color:${f.on ? 'var(--ink)' : 'var(--faint)'}">${f.on ? 'counts' : ''}</span></div>${f.items.map(row).join('')}</div>`).join('');
     return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start">
       ${col('A', 'Official record', m.A.map(row).join(''), nA)}${col('B', 'Rules', m.B.map(row).join(''), nB)}
-      ${col('C', 'Risk families', `<div class="tiny muted" style="margin-bottom:4px">${nC} of ${fams.length} risk families · 3 or more makes mark C</div>` + cBody, nC)}</div>
-      <p class="tiny muted" style="margin:10px 0 0;display:flex;gap:18px;flex-wrap:wrap"><span>● triggered</span><span>○ checked, clear</span><span>— not checked: data missing</span></p>`;
+      ${col('C', 'Risk families', `<div class="tiny muted" style="margin-bottom:4px">${nC} of ${fams.length} risk families · 3 or more makes flag C</div>` + cBody, nC)}</div>
+      <p class="tiny muted" style="margin:10px 0 0;display:flex;gap:18px;flex-wrap:wrap"><span><span style="color:var(--red)">●</span> triggered</span><span>○ checked, clear</span><span>— not checked: data missing</span></p>`;
   }
   const A = (analyses || {})[c.id];
   const ai = !reviewer ? '' : A ? `
@@ -94,7 +94,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
     </section>` : `
     <section class="card">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-size:17px">AI review</h2><span class="tiny muted">reviewers only</span></div>
-      <ul style="margin:10px 0 12px;padding:0 0 0 18px;font-size:14px;line-height:1.6;color:var(--ink2)"><li>Summary of the file and why it was marked</li><li>Ordinary explanations to rule out</li><li>Search of news, official statements and court records</li><li>Next document and site checks</li></ul>
+      <ul style="margin:10px 0 12px;padding:0 0 0 18px;font-size:14px;line-height:1.6;color:var(--ink2)"><li>Summary of the file and why it was flagged</li><li>Ordinary explanations to rule out</li><li>Search of news, official statements and court records</li><li>Next document and site checks</li></ul>
       <p class="small muted" style="margin:0 0 14px">Every claim links to its source. It advises; you decide.</p>
       <button class="btn dark" id="aiBtn" style="width:100%;justify-content:center;min-height:44px">Request AI review</button>
       <p class="small muted" id="aiMsg" style="margin:10px 0 0" role="status"></p>
@@ -102,12 +102,14 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   const side = reviewer ? `
     <section class="card" style="border-top:6px solid var(--red)">
       <h2 style="font-size:17px">Your decision</h2>
-      <p class="small muted" style="margin:6px 0 10px">Saved on this device for now. Team-wide recording is the next step.</p>
+      <p class="small muted" style="margin:6px 0 10px">Saved for the whole review team. Teammates see it the next time they open a page.</p><p class="small" id="lastBy" style="margin:0 0 10px;font-weight:600"></p>
       <p class="small" id="gate" role="status" style="margin:0 0 14px;line-height:1.5"></p>
       <div class="decide" role="radiogroup" aria-label="Decision">${[['escalate', 'Escalate'], ['monitor', 'Monitor'], ['clear', 'No concern'], ['error', 'Data error']].map(([k, l]) => `<button role="radio" aria-checked="false" data-d="${k}">${l}</button>`).join('')}</div>
       <label class="small" style="display:block;margin-top:14px;color:var(--ink2)">Reason<textarea id="why" rows="3" placeholder="One or two lines: what you saw and where" style="margin-top:6px"></textarea></label>
       <div class="err" id="derr" role="alert"></div>
+      <label class="small" style="display:block;margin:0 0 10px;color:var(--ink2)" for="mRev">Your reviewer ID</label><input id="mRev" class="mi" style="margin:-6px 0 12px" maxlength="20" placeholder="R-03">
       <button class="btn dark" id="save" style="width:100%;justify-content:center;min-height:44px">Save decision</button>
+      <p class="small" id="saveMsg" role="status" style="margin:8px 0 0"></p>
       <div id="memoPanel" hidden></div>
     </section>
     ${ai}` : `
@@ -126,8 +128,9 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   </section>
   <div style="display:flex;flex-wrap:wrap;gap:40px;margin-top:32px">
     <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:44px">
-      <section><p class="label">Why it is in the list</p>${reasons}${c.reasons.some(r => r.basis === 'S') ? '<p class="small muted" style="margin:12px 0 0">C marks a risk family, part of mark C. One alone is not mark C; three or more families make it.</p>' : ''}${c.context.length ? '<p class="small muted" style="margin:12px 0 0">Context, not counted: the province\'s share of elected officials from political families is above the national average.</p>' : ''}</section>
-      ${reviewer ? (() => { const mine = reports.filter(r => r.contract === c.id); return mine.length ? `<section><p class="label">Public reports (${mine.length})</p><p class="small muted" style="margin:0 0 10px">Not checked. A report never changes a mark. Contact details and files are in the private repository under data/reports, by reference.</p>${mine.map(r => `<div class="reason"><div style="min-width:0"><div style="font-size:15px;line-height:1.5;white-space:pre-wrap">${B.esc(r.message)}</div><div class="small muted" style="margin-top:6px">${B.esc(r.category)} · ${B.date(r.at)} · ref <span class="num">${B.esc(r.ref)}</span> · ${r.files} file${r.files === 1 ? '' : 's'}</div></div></div>`).join('')}</section>` : ''; })() : ''}
+      <section><p class="label">Why it is in the list</p>${reasons}${c.reasons.some(r => r.basis === 'S') ? '<p class="small muted" style="margin:12px 0 0">C here means a risk family, part of flag C. One alone is not flag C; three or more families make it.</p>' : ''}${c.context.length ? '<p class="small muted" style="margin:12px 0 0">Context, not counted: the province\'s share of elected officials from political families is above the national average.</p>' : ''}</section>
+      ${reviewer ? (() => { const mine = reports.filter(r => r.contract === c.id); return mine.length ? `<section><p class="label">Public reports (${mine.length})</p><p class="small muted" style="margin:0 0 10px">Not checked. A report never changes a flag. Contact details and files are in the private repository under data/reports, by reference.</p>${mine.map(r => `<div class="reason"><div style="min-width:0"><div style="font-size:15px;line-height:1.5;white-space:pre-wrap">${B.esc(r.message)}</div><div class="small muted" style="margin-top:6px">${B.esc(r.category)} · ${B.date(r.at)} · ref <span class="num">${B.esc(r.ref)}</span> · ${r.files} file${r.files === 1 ? '' : 's'}</div></div></div>`).join('')}</section>` : ''; })() : ''}
+      ${reviewer && (c.political || []).length ? `<section><p class="label">Political links (review team only)</p><p class="small muted" style="margin:0 0 10px">Published reports and BetterGov. Leads to verify, not findings. Not counted in any flag. Names stay in the source.</p>${c.political.map(x => `<div class="reason"><div style="min-width:0"><div style="font-size:15px;line-height:1.5">${B.esc(x.text)}</div><div class="small muted" style="margin-top:6px">${B.esc(x.kind)}${x.source ? ` · <a href="${B.esc(x.source)}" target="_blank" rel="noopener">source</a>` : ''}</div></div></div>`).join('')}</section>` : ''}
       <section><p class="label">All checks</p>${matrix(c.matrix)}</section>
       ${tl || prog ? `<section><p class="label">Timeline and progress</p>${tl}${prog}</section>` : ''}
       ${c.lat ? `<section><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px"><p class="label" style="margin:0">Site</p><div class="seg" role="group" aria-label="Map layer"><button class="on" data-l="map">Map</button><button data-l="sat">Satellite</button><button data-l="hist">Satellite over time</button></div></div>

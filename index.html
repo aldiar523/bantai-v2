@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BantAI — public works, read closely</title>
-<meta name="description" content="A weekly, open-data screen of DPWH public works contracts in the Philippines. A mark is a request to look, never an accusation.">
+<meta name="description" content="A weekly, open-data screen of DPWH public works contracts in the Philippines. A flag is a request to look, never an accusation.">
 <link rel="stylesheet" href="assets/style.css">
 <style>
 .lead{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(28px,5vw,64px);margin-top:4px;align-items:start}
@@ -41,7 +41,7 @@
     <div class="ident"><div class="ident-name">Project BantAI</div><div class="ident-sub">AI-Assisted Public Infrastructure Integrity Monitoring Tool <span id="heroYears" style="color:#F4D35E;font-weight:600;white-space:nowrap">2016 to 2026</span></div></div>
     <div class="kicker" style="color:#F4D35E" id="kick">This week</div>
     <h1 id="headline">Open public works contracts worth a closer look</h1>
-    <p class="principle">A mark is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
+    <p class="principle">A flag is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
     <div class="mcards" id="mcards"></div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:26px">
       <a class="cta" href="queue.html" style="background:var(--red);color:#fff">See the official records →</a>
@@ -132,23 +132,23 @@
 <script>
 B.header('home');
 B.publicData().then(p => {
-  const t = p.totals, tt = t.tiers, marked = tt.A + tt.B + tt.C;
+  const t = p.totals, tt = t.tiers, flagged = tt.A + tt.B + tt.C;
   document.getElementById('kick').textContent = `This week · list of ${B.date(p.snapshot)}`;
-  document.getElementById('headline').textContent = `${B.n(marked)} out of ${B.n(t.open)} open DPWH contracts worth a closer look`;
+  document.getElementById('headline').textContent = `${B.n(flagged)} out of ${B.n(t.open)} open DPWH contracts worth a closer look`;
   const yrsSpan = p.span || [2016, new Date(p.snapshot).getFullYear()];
   document.getElementById('heroYears').textContent = `${yrsSpan[0]} to ${yrsSpan[1]}`;
   const ICON = { A: '<path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3.5 3.5 0 0 0 6 0L5 7Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7Z"/>', B: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 17.5v.5"/>', C: '<path d="M5 20v-5M10 20v-9M15 20v-13M20 20V4"/>' };
   document.getElementById('mcards').innerHTML = [
     ['A', 'var(--a)', '#fff', '#FF8A7A', 'Audit finding, court case, debarment or revoked licence', 'queue.html'],
-    ['B', 'var(--b)', '#2B1503', '#F7AE6B', 'A screening rule was triggered. It needs checking against the documents', 'method.html#marks'],
-    ['C', 'var(--c)', '#2E2400', '#F4D35E', 'Three or more independent risk families agree', 'method.html#marks']
-  ].map(([k, col, ink, num, desc, href]) => `<a class="mcard" href="${href}" style="--mc:${col};--mi:${ink};--mn:${num}"><div class="mcard-top"><span class="mcard-l">${k}</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg></div><div class="mcard-n">${B.n(tt[k])}</div><div class="mcard-p">${(100 * tt[k] / marked).toFixed(1)}% of the list</div><div class="mcard-t">${B.tierName[k].replace(/ (.)/, (m, x) => ' ' + x.toUpperCase())}</div><div class="mcard-d">${desc}</div></a>`).join('');
+    ['B', 'var(--b)', '#2B1503', '#F7AE6B', 'A screening rule was triggered. It needs checking against the documents', 'method.html#flags'],
+    ['C', 'var(--c)', '#2E2400', '#F4D35E', 'Three or more independent risk families agree', 'method.html#flags']
+  ].map(([k, col, ink, num, desc, href]) => `<a class="mcard" href="${href}" style="--mc:${col};--mi:${ink};--mn:${num}"><div class="mcard-top"><span class="mcard-l">${k}</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg></div><div class="mcard-n">${B.n(tt[k])}</div><div class="mcard-p">${(100 * tt[k] / flagged).toFixed(1)}% of the list</div><div class="mcard-t">${B.tierName[k].replace(/ (.)/, (m, x) => ' ' + x.toUpperCase())}</div><div class="mcard-d">${desc}</div></a>`).join('');
 
   // funnel
   const span = p.span || [2016, new Date(p.snapshot).getFullYear()];
   document.getElementById('funHead').textContent = `From every DPWH contract since ${span[0]} to this week's list`;
-  document.getElementById('funDek').innerHTML = `The DPWH list holds every contract from ${span[0]} to ${span[1]}, and most are finished. Only open contracts can still be checked before the money is paid. Every Monday BantAI re-reads the whole list and picks from the open ones. Bars are to scale. <a href="method.html#marks">What A, B and C mean →</a>`;
-  const rows = [[t.contracts, `every contract in the DPWH list, ${span[0]}–${span[1]}`], [t.open, `still open on ${B.date(p.snapshot)}: for procurement, not yet started, under way`], [marked, `on this week's list`]];
+  document.getElementById('funDek').innerHTML = `The DPWH list holds every contract from ${span[0]} to ${span[1]}, and most are finished. Only open contracts can still be checked before the money is paid. Every Monday BantAI re-reads the whole list and picks from the open ones. Bars are to scale. <a href="method.html#flags">What A, B and C mean →</a>`;
+  const rows = [[t.contracts, `every contract in the DPWH list, ${span[0]}–${span[1]}`], [t.open, `still open on ${B.date(p.snapshot)}: for procurement, not yet started, under way`], [flagged, `on this week's list`]];
   let h = rows.map(([n, l]) => `<div class="row"><div class="lab"><div class="n">${B.n(n)}</div><div class="lt">${l}</div></div><div><div class="bar" style="width:${Math.max(0.25, 100 * n / t.contracts)}%"></div></div></div>`).join('');
   document.getElementById('funnel').innerHTML = h;
 

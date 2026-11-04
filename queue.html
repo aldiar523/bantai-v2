@@ -24,18 +24,24 @@
     </label>
     <button class="btn" id="fbtn" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"/></svg>Filters <span class="num" id="fcount"></span></button>
     <label class="field small muted">Group
-      <select id="group" style="color:var(--ink)"><option value="">None</option><option value="tier">Mark</option><option value="infra">Infrastructure type</option><option value="region">Region</option><option value="office">Office</option><option value="status">Status</option><option value="year">Year</option><option value="contractor">Contractor</option></select>
+      <select id="group" style="color:var(--ink)"><option value="">None</option><option value="tier">Flag</option><option value="infra">Infrastructure type</option><option value="region">Region</option><option value="office">Office</option><option value="status">Status</option><option value="year">Year</option><option value="contractor">Contractor</option></select>
     </label>
     <button class="btn" id="cbtn" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>Columns</button>
-    <button class="btn dark" id="csv"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Export CSV</button>
+    <div class="seg" role="group" aria-label="View"><button data-view="list" class="on">List</button><button data-view="map">Map</button></div>
+    <button class="btn dark" id="csv" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Export CSV</button>
   </div>
   <div id="active" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
   <div id="fpanel" class="panel" hidden></div>
   <div id="cpanel" class="panel" style="padding:16px" hidden></div>
 
-  <div class="tbl" style="margin-top:16px"><div id="table"></div></div>
+  <div id="listWrap"><div class="tbl" style="margin-top:16px"><div id="table"></div></div>
   <div class="small muted" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 2px">
     <span id="shown"></span><span>Click a header to sort. Drag a header to move it, its right edge to resize.</span>
+  </div></div>
+  <div id="mapWrap" hidden style="margin-top:16px">
+    <div id="qmap" role="region" aria-label="Map of the listed contracts"></div>
+    <div class="small" id="mapLeg" style="display:flex;flex-wrap:wrap;gap:6px 18px;padding:10px 2px;align-items:center"></div>
+    <p class="tiny muted" style="margin:0 2px">Larger circle, larger budget. Points are as given by DPWH; some flag an office rather than the site. Hover for the work and budget; click to open the contract.</p>
   </div>
 </main>
 <script src="assets/core.js"></script>
@@ -43,14 +49,14 @@
 <script>
 B.header('queue');
 const COLS = [
-  { key: 'tier', label: 'Mark', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 280 },
+  { key: 'tier', label: 'Flag', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 280 },
   { key: 'region', label: 'Region', w: 150 }, { key: 'office', label: 'Office', w: 170, off: true }, { key: 'contractor', label: 'Contractor', w: 230, off: true },
   { key: 'year', label: 'Year', w: 70, num: 1, off: true }, { key: 'amount', label: '₱ million', w: 110, num: 1 }, { key: 'progress', label: 'Done %', w: 84, num: 1, off: true },
   { key: 'signals', label: 'Risk families', w: 110, num: 1 }, { key: 'reason', label: 'Main reason', w: 250 }, { key: 'status', label: 'Status', w: 120, off: true },
   { key: 'infra', label: 'Infrastructure type', w: 190, off: true }, { key: 'report', label: 'Report', w: 112 }
 ];
 const FILTERS = [
-  { key: 'tier', name: 'Mark', type: 'chips', opts: ['A', 'B', 'C'] },
+  { key: 'tier', name: 'Flag', type: 'chips', opts: ['A', 'B', 'C'] },
   { key: 'infra', name: 'Infrastructure type', type: 'chips', opts: ['Bridges', 'Buildings and Facilities', 'Flood Control and Drainage', 'Roads', 'Water Provision and Storage', 'Other'] },
   { key: 'status', name: 'Status', type: 'chips', opts: ['On-Going', 'Not Yet Started', 'For Procurement'] },
   { key: 'region', name: 'Region', type: 'chips', opts: null },
@@ -68,18 +74,22 @@ const S = { q: '', group: '', vals: {}, shown: ['tier', 'infra', 'region', 'amou
 let ROWS = [], REV = false;
 const def = k => COLS.find(c => c.key === k);
 const saveCols = () => localStorage.setItem('bantai-cols', JSON.stringify(S.cols));
-const decisions = () => JSON.parse(localStorage.getItem('bantai-decisions') || '{}');
+let TEAM = {};
+const decisions = () => TEAM;
 
 const DEC = { escalate: 'Escalate', monitor: 'Monitor', clear: 'No concern', error: 'Data error' };
 const reviewed = () => Object.entries(decisions()).filter(([, d]) => d.pick).sort((a, b) => String(b[1].at).localeCompare(String(a[1].at)));
+const fbox = (k, n, l, c) => `<button class="cases-btn qf" data-q="${k}" aria-pressed="false" style="box-shadow:inset 0 -6px 0 var(--${c});border-right:1px solid var(--line2)" title="Show only flag ${k}"><span class="num" style="font-size:26px;font-weight:600;display:block">${B.n(n)}</span><span class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">${l}</span></button>`;
+function paintQuick() { const v = S.vals.tier || []; document.querySelectorAll('[data-q]').forEach(b => { const on = v.includes(b.dataset.q); b.setAttribute('aria-pressed', String(on)); b.classList.toggle('on', on); }); }
+function wireQuick() { document.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, v = S.vals.tier || []; S.vals.tier = v.includes(k) ? v.filter(x => x !== k) : [...v, k]; draw(); }); }
 function casesBox() {
   return `<button class="cases-btn" id="casesBtn" aria-expanded="false" aria-controls="casesPanel"><span class="num" style="font-size:26px;font-weight:600;display:block">${B.n(reviewed().length)}</span><span class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">Cases reviewed ▾</span></button>`;
 }
 function drawCases() {
   const rows = reviewed(), byId = new Map(ROWS.map(r => [r.id, r]));
-  document.getElementById('casesPanel').innerHTML = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline"><h2 style="font-size:17px">Cases reviewed</h2><span class="small muted">Saved on this device. Other reviewers' cases do not show here yet.</span></div>` +
-    (rows.length ? `<div style="overflow-x:auto;margin-top:10px"><table class="ytab"><thead><tr><th>Contract</th><th>Mark</th><th>Work</th><th>Decision</th><th>Reason</th><th>Reviewed</th></tr></thead><tbody>${rows.map(([id, d]) => { const r = byId.get(id);
-      return `<tr><td><a class="rowlink" href="contract.html?id=${encodeURIComponent(id)}">${B.esc(id)}</a></td><td>${r ? `<span class="t t${r.tier}">${r.tier}</span>` : '—'}</td><td>${r ? B.esc(r.short) : 'Not on this week\'s list'}</td><td style="font-weight:600;white-space:nowrap">${B.esc(DEC[d.pick] || d.pick)}</td><td>${B.esc(d.why || '—')}</td><td class="num" style="white-space:nowrap">${d.at ? B.date(d.at) : '—'}</td></tr>`; }).join('')}</tbody></table></div>`
+  document.getElementById('casesPanel').innerHTML = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline"><h2 style="font-size:17px">Cases reviewed</h2><span class="small muted">All reviewers' latest decisions.</span></div>` +
+    (rows.length ? `<div style="overflow-x:auto;margin-top:10px"><table class="ytab"><thead><tr><th>Contract</th><th>Flag</th><th>Work</th><th>Decision</th><th>Reason</th><th>By</th><th>Reviewed</th></tr></thead><tbody>${rows.map(([id, d]) => { const r = byId.get(id);
+      return `<tr><td><a class="rowlink" href="contract.html?id=${encodeURIComponent(id)}">${B.esc(id)}</a></td><td>${r ? `<span class="t t${r.tier}">${r.tier}</span>` : '—'}</td><td>${r ? B.esc(r.short) : 'Not on this week\'s list'}</td><td style="font-weight:600;white-space:nowrap">${B.esc(DEC[d.pick] || d.pick)}</td><td>${B.esc(d.why || '—')}</td><td>${B.esc(d.by || '—')}</td><td class="num" style="white-space:nowrap">${d.at ? B.date(d.at) : '—'}</td></tr>`; }).join('')}</tbody></table></div>`
       : '<p class="small muted" style="margin:10px 0 0">No cases yet. Decisions you save on a contract page will be listed here.</p>');
 }
 function wireCases() {
@@ -100,8 +110,9 @@ function tagsOf(c) {
 }
 function mainReason(c) { const r = c.reasons.find(r => r.basis !== 'S'); return r ? r.text : c.fams.join(' · '); }
 
-B.allContracts().then(({ list, reviewer }) => {
+B.allContracts().then(async ({ list, reviewer }) => {
   REV = reviewer;
+  if (REV) TEAM = await B.reviews();
   const dec = decisions();
   ROWS = list.map(c => ({ ...c, amountM: c.amount / 1e6, tags: tagsOf(c), reason: mainReason(c),
     review: { escalate: 'Escalate', monitor: 'Monitor', clear: 'No concern', error: 'Data error' }[dec[c.id]?.pick] || 'Not reviewed' }));
@@ -109,13 +120,14 @@ B.allContracts().then(({ list, reviewer }) => {
   B.publicData().then(p => {
     const t = p.totals.tiers;
     document.getElementById('title').textContent = REV ? 'Review queue' : 'Open contracts with an official record'; document.getElementById('kick').textContent = 'List of ' + B.date(p.snapshot);
-    document.getElementById('sub').innerHTML = REV ? `Open contracts marked this week. Digital seal: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
-      : `Mark A only. Marks B and C are for the review team. <a href="signin.html">Reviewer sign-in</a> · <button id="reportAny" class="cl-link">Report what you see on any site</button>`;
+    document.getElementById('sub').innerHTML = REV ? `Open contracts flagged this week. Digital seal: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
+      : `Flag A only. Flags B and C are for the review team. <a href="signin.html">Reviewer sign-in</a> · <button id="reportAny" class="cl-link">Report what you see on any site</button>`;
     document.getElementById('reportAny')?.addEventListener('click', () => BReport.open(''));
     const box = (n, l, c) => `<div style="padding:12px 20px;border-right:1px solid var(--line2);${c ? `box-shadow:inset 0 -6px 0 var(--${c})` : ''}"><div class="num" style="font-size:26px;font-weight:600">${B.n(n)}</div><div class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">${l}</div></div>`;
-    document.getElementById('counts').innerHTML = (REV ? box(p.totals.marked, 'marked') : '') + box(t.A, 'A · official', 'a') +
-      (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + casesBox() : '');
-    wireCases();
+    document.getElementById('counts').innerHTML = (REV ? box(p.totals.flagged, 'flagged') : '') + (REV ? fbox('A', t.A, 'A · official', 'a') : box(t.A, 'A · official', 'a')) +
+      (REV ? fbox('B', t.B || 0, 'B · rule', 'b') + fbox('C', t.C || 0, 'C · signals', 'c') + casesBox() : '');
+    wireCases(); wireQuick();
+    document.getElementById('csv').hidden = !REV;   // downloads are for signed-in reviewers
     if (!REV) S.shown = ['infra', 'region', 'amount', 'tags'];
     loadView();
     draw();
@@ -153,7 +165,7 @@ function cell(r, c) {
 const VIEW_KEY = () => 'bantai-view-' + (REV ? 'rev' : 'pub');
 function saveView() {
   try {
-    localStorage.setItem(VIEW_KEY(), JSON.stringify({ q: S.q, group: S.group, vals: S.vals, shown: S.shown, sort: S.sort, dir: S.dir,
+    localStorage.setItem(VIEW_KEY(), JSON.stringify({ view: S.view, q: S.q, group: S.group, vals: S.vals, shown: S.shown, sort: S.sort, dir: S.dir,
       fopen: !document.getElementById('fpanel').hidden, copen: !document.getElementById('cpanel').hidden }));
   } catch (e) { /* storage unavailable: the view is simply not kept */ }
 }
@@ -161,7 +173,7 @@ function loadView() {
   let v = null;
   try { v = JSON.parse(localStorage.getItem(VIEW_KEY()) || 'null'); } catch (e) { v = null; }
   if (!v) return;
-  Object.assign(S, { q: v.q || '', group: v.group || '', vals: v.vals || {}, shown: v.shown || S.shown, sort: v.sort || 'rank', dir: v.dir || 1 });
+  Object.assign(S, { view: v.view || 'list', q: v.q || '', group: v.group || '', vals: v.vals || {}, shown: v.shown || S.shown, sort: v.sort || 'rank', dir: v.dir || 1 });
   document.getElementById('q').value = S.q;
   if (!S.shown.includes('infra')) S.shown.unshift('infra');   // views saved before this filter existed
   document.getElementById('group').value = S.group;
@@ -171,6 +183,41 @@ function loadView() {
     document.getElementById(b).classList.toggle('dark', !!open);
   });
 }
+// Map view: the rows that pass the filters, coloured by flag.
+const FLAGCOL = { A: '#C4362C', B: '#EE8A3A', C: '#F4D35E' };
+let MAP = null, LAYER = null, FITTED = false;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  return new Promise((ok, no) => {
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(l);
+    const s = document.createElement('script'); s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s);
+  });
+}
+async function drawMap(rows) {
+  const leg = document.getElementById('mapLeg');
+  try { await loadLeaflet(); } catch (e) { leg.textContent = 'The map could not load. Check the connection and try again.'; return; }
+  if (!MAP) {
+    MAP = L.map('qmap', { preferCanvas: true }).setView([12.5, 122], 6);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(MAP);
+  }
+  MAP.invalidateSize();
+  if (LAYER) LAYER.remove();
+  LAYER = L.layerGroup().addTo(MAP);
+  const inPh = r => r.lat >= 4 && r.lat <= 22 && r.lon >= 115 && r.lon <= 128;
+  const pts = rows.filter(inPh), order = { C: 0, B: 1, A: 2 };
+  pts.slice().sort((a, b) => order[a.tier] - order[b.tier] || b.amount - a.amount).forEach(r => {
+    const m = L.circleMarker([r.lat, r.lon], { radius: Math.max(4, Math.min(22, 3 + Math.sqrt((r.amount || 0) / 1e6) / 1.4)), color: r.tier === 'C' ? '#7A6410' : '#fff', weight: 1, fillColor: FLAGCOL[r.tier], fillOpacity: .78 });
+    m.bindTooltip(`<b>${B.esc(r.short)}</b><br>${B.peso(r.amount)} · Flag ${r.tier}`, { direction: 'top', sticky: true });
+    m.on('click', () => { location.href = 'contract.html?id=' + encodeURIComponent(r.id); });
+    m.addTo(LAYER);
+  });
+  if (!FITTED && pts.length) { MAP.fitBounds(pts.map(r => [r.lat, r.lon]), { padding: [24, 24] }); FITTED = true; }
+  const n = k => pts.filter(r => r.tier === k).length, kinds = ['A', 'B', 'C'].filter(k => n(k));
+  leg.innerHTML = kinds.map(k => `<span style="display:inline-flex;align-items:center;gap:6px"><i style="width:12px;height:12px;border-radius:50%;display:inline-block;background:${FLAGCOL[k]}"></i>${k} · ${B.esc(B.tierName[k])}: ${B.n(n(k))}</span>`).join('') +
+    `<span class="muted">${B.n(rows.length - pts.length)} of ${B.n(rows.length)} have no usable location</span>`;
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; draw(); });
+
 function restoreScroll() {
   let y = 0;
   try { y = +sessionStorage.getItem('bantai-queue-y') || 0; } catch (e) { y = 0; }
@@ -200,7 +247,10 @@ function draw() {
   if (!rows.length) html += `<div style="padding:40px 14px;text-align:center" class="muted">No contract matches these filters.</div>`;
   document.getElementById('table').innerHTML = html;
   document.getElementById('shown').innerHTML = `Showing <span class="num">${B.n(rows.length)}</span> of <span class="num">${B.n(ROWS.length)}</span>`;
-  wireHeaders(); drawActive(); drawFilters(); drawCols();
+  wireHeaders(); drawActive(); drawFilters(); drawCols(); paintQuick();
+  document.getElementById('listWrap').hidden = S.view === 'map'; document.getElementById('mapWrap').hidden = S.view !== 'map';
+  document.querySelectorAll('[data-view]').forEach(b => { const on = (S.view || 'list') === b.dataset.view; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  if (S.view === 'map') drawMap(rows);
 }
 function wireHeaders() {
   let drag = null;

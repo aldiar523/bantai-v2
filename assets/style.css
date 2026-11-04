@@ -194,3 +194,10 @@ body.rp-open{overflow:hidden}
 
 /* wrapped text in the queue */
 .td.wrap{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.4;padding-top:10px;padding-bottom:10px}
+
+/* quick flag filters and map */
+.qf{display:block}.qf.on{background:var(--ink);color:var(--paper)}.qf.on span{color:var(--paper)!important}
+#qmap{height:min(680px,72vh);min-height:380px;background:#E4E1D9}
+.leaflet-tooltip{font-family:var(--sans);font-size:13px;white-space:normal;width:260px}
+
+[hidden]{display:none!important}

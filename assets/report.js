@@ -1,4 +1,4 @@
-/* BantAI v2 — public report pop-up. A report is a request to check and never changes a mark.
+/* BantAI v2 — public report pop-up. A report is a request to check and never changes a flag.
    The message, contact details and files are encrypted in the visitor's browser with the team's public key, then
    sent in small parts through the ntfy.sh relay. The hourly job site_v2/report_intake.py opens them in the private
    repository. Nothing is sent or kept in clear. See docs/REPORTS.md. */
@@ -78,7 +78,7 @@ const BReport = (() => {
         <h2 id="rpTitle">Report what you see on a public works site</h2>
         <p class="small" style="margin:0;line-height:1.5">Citizens, journalists and civil-society monitors can send what they observe. Each report is read by the review team.</p>
         <p class="rp-note">A report is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
-        <span class="h" id="rpCatL">Category <em>*</em> <small>which mark does this relate to?</small></span>
+        <span class="h" id="rpCatL">Category <em>*</em> <small>which flag does this relate to?</small></span>
         <button type="button" class="rp-sel" id="rpCat" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="rpCatL rpCat"><span id="rpCatV" class="muted">Please select</span><span aria-hidden="true">▾</span></button>
         <ul class="rp-list" id="rpList" role="listbox" aria-labelledby="rpCatL" hidden></ul>
         <label class="h" for="rpWhere">Contract ID or project location <small>(optional)</small></label>
@@ -94,7 +94,7 @@ const BReport = (() => {
         <label class="rp-drop" id="rpDrop"><b>Drop files here or click to upload</b><br><span class="tiny muted">Photo, video or document (optional) · Maximum ${MAX_FILES} files, ${MAX_MB} MB each</span><input type="file" id="rpFile" multiple accept="${ACCEPT}" hidden></label>
         <ul class="rp-files" id="rpFiles"></ul>
         <div class="rp-hp" aria-hidden="true"><label>Website<input type="text" id="rpSite" tabindex="-1" autocomplete="off"></label></div>
-        <p class="tiny muted" style="margin:12px 0 4px;line-height:1.5">Name and contact details are optional and never published. Your report is encrypted on this device and passes through a third-party relay (ntfy.sh) that cannot read it. Only the review team can open it, and they may contact you if you leave details. A report does not change a mark.</p>
+        <p class="tiny muted" style="margin:12px 0 4px;line-height:1.5">Name and contact details are optional and never published. Your report is encrypted on this device and passes through a third-party relay (ntfy.sh) that cannot read it. Only the review team can open it, and they may contact you if you leave details. A report does not change a flag.</p>
         <div class="err" id="rpErr" role="alert"></div>
       </div>
       <div class="rp-foot"><button type="button" class="btn" id="rpCancel">Cancel</button><button type="submit" class="btn rp-send" id="rpSend">Submit report →</button></div>
@@ -114,15 +114,15 @@ const BReport = (() => {
       g.items.map(([t, d]) => `<li role="option" class="rp-o" aria-selected="false" data-v="${esc(g.g + ' · ' + t)}" data-l="${esc(t)}">${esc(t)}${d ? `<small>${esc(d)}</small>` : ''}</li>`).join('')).join('') +
       `<li role="option" class="rp-o" style="padding-left:12px;margin-top:6px;border-top:1px solid var(--line2);padding-top:10px" aria-selected="false" data-v="${OTHER}" data-l="${OTHER}">${OTHER}</li>`;
     const opts = [...list.querySelectorAll('[role=option]')];
-    function toggle(show) { list.hidden = !show; $('rpCat').setAttribute('aria-expanded', String(show)); if (show) { active = Math.max(0, opts.findIndex(o => o.dataset.v === category)); mark(); } else $('rpCat').focus(); }
-    function mark() { opts.forEach((o, i) => o.classList.toggle('act', i === active)); opts[active]?.scrollIntoView({ block: 'nearest' }); }
+    function toggle(show) { list.hidden = !show; $('rpCat').setAttribute('aria-expanded', String(show)); if (show) { active = Math.max(0, opts.findIndex(o => o.dataset.v === category)); flag(); } else $('rpCat').focus(); }
+    function flag() { opts.forEach((o, i) => o.classList.toggle('act', i === active)); opts[active]?.scrollIntoView({ block: 'nearest' }); }
     function choose(o) { category = o.dataset.v; opts.forEach(x => x.setAttribute('aria-selected', String(x === o))); $('rpCatV').textContent = o.dataset.l; $('rpCatV').classList.remove('muted'); toggle(false); }
     $('rpCat').onclick = () => toggle(list.hidden);
     list.onclick = e => { const o = e.target.closest('[role=option]'); if (o) choose(o); };
     $('rpCat').onkeydown = e => {
       if (list.hidden) { if (e.key === 'ArrowDown') { e.preventDefault(); toggle(true); } return; }
-      if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(opts.length - 1, active + 1); mark(); }
-      if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); mark(); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(opts.length - 1, active + 1); flag(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); flag(); }
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(opts[active]); }
     };
 
@@ -156,7 +156,7 @@ const BReport = (() => {
       if (!message) { err.textContent = 'Please write what you saw.'; $('rpMsg').focus(); return; }
       if (mail && !/^\S+@\S+\.\S+$/.test(mail)) { err.textContent = 'Please check the email, or leave it empty.'; $('rpMail').focus(); return; }
       const thanks = rid => {
-        ov.querySelector('form').innerHTML = `<div class="rp-body" style="padding-bottom:22px"><h2 tabindex="-1" id="rpDone">Thank you. Your report was sent.</h2><p style="line-height:1.55">Your reference is <b class="num">${esc(rid)}</b>. The review team reads reports in batches, so it may take some time. A report is a request to check; it does not change a mark.</p><button type="button" class="btn dark" id="rpEnd">Close</button></div>`;
+        ov.querySelector('form').innerHTML = `<div class="rp-body" style="padding-bottom:22px"><h2 tabindex="-1" id="rpDone">Thank you. Your report was sent.</h2><p style="line-height:1.55">Your reference is <b class="num">${esc(rid)}</b>. The review team reads reports in batches, so it may take some time. A report is a request to check; it does not change a flag.</p><button type="button" class="btn dark" id="rpEnd">Close</button></div>`;
         $('rpEnd').onclick = close; $('rpDone').focus();
       };
       if ($('rpSite').value) { thanks('received'); return; }   // filled only by automated bots

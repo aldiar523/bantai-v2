@@ -1,5 +1,5 @@
 /* BantAI v2 — reviewer tools on the contract page: the "What to check" checklist, the decision gate and the
-   referral memo. A mark is a request to check, and the memo says so. Nothing here changes a mark.
+   referral memo. A flag is a request to check, and the memo says so. Nothing here changes a flag.
    Everything stays in this browser for now (localStorage for ticks and comments, IndexedDB for files):
    recording decisions in one shared place is a separate open item. */
 const BR = (() => {
@@ -32,10 +32,15 @@ const BR = (() => {
   }
 
   /* ---------- checklist ---------- */
-  function mountChecklist(c, onChange) {
+  function mountChecklist(c, onChange, shared) {
     const box = $('checklist');
     const all = read('bantai-checklist', {});
     const state = all[c.id] || (all[c.id] = {});
+    // A teammate's newer ticks and comments replace this browser's; files stay on the device that added them.
+    if (shared && shared.steps && String(shared.at || '') >= String(state.__at || '')) {
+      Object.entries(shared.steps).forEach(([t, v]) => { state[t] = { ...(state[t] || { files: [] }), done: !!v.done, note: v.note || '' }; });
+      state.__at = shared.at;
+    }
     const save = () => { if (!write('bantai-checklist', all)) $('clMsg').textContent = 'This browser could not save your ticks and comments.'; };
     const step = t => state[t] || (state[t] = { done: false, note: '', files: [] });
     const count = () => c.checks.filter(t => state[t] && state[t].done).length;
@@ -47,7 +52,7 @@ const BR = (() => {
         <div class="cl-more">
           <label class="tiny muted" for="clNote${i}">Comment</label>
           <textarea id="clNote${i}" data-n="${i}" rows="2" placeholder="What you checked and what you found">${esc(step(t).note || '')}</textarea>
-          <div class="cl-files"><label class="btn" style="min-height:36px;font-size:13px">Add file<input type="file" data-f="${i}" multiple hidden></label><span class="tiny muted">Up to ${MAX_FILES} files, ${MAX_MB} MB each. Files stay on this device.</span></div>
+          <div class="cl-files"><label class="btn" style="min-height:36px;font-size:13px">Add file<input type="file" data-f="${i}" multiple hidden></label><span class="tiny muted">Up to ${MAX_FILES} files, ${MAX_MB} MB each. Files stay on this device; ticks and comments go to the team when you save.</span></div>
           <ul class="cl-list" id="clFiles${i}">${fileList(t, i)}</ul>
           <div class="err" id="clErr${i}" role="alert" style="min-height:0"></div>
         </div></div>`).join('') + '<p class="tiny muted" id="clMsg" role="status" style="margin:10px 0 0"></p>';
@@ -98,7 +103,7 @@ const BR = (() => {
       }
     });
     paint();
-    return { allDone: () => count() === c.checks.length, done: count, state };
+    return { allDone: () => count() === c.checks.length, done: count, state, save };
   }
 
   /* ---------- memo content ---------- */
@@ -191,20 +196,20 @@ const BR = (() => {
 
       <h3>Background</h3>
       <p>Limited oversight capacity makes it hard to know which public works contracts need closer scrutiny first. The Commission on Audit's 2024 annual audit report on DPWH found 2,596 locally funded projects worth ₱138.23 billion not efficiently implemented.</p>
-      <p>Project BantAI is a weekly screen of DPWH contracts using open data. It marks the open contracts to check first. Written rules set the marks, not AI. A person reviewed this contract and decided to refer it.</p>
+      <p>Project BantAI is a weekly screen of DPWH contracts using open data. It marks the open contracts to check first. Written rules set the flags, not AI. A person reviewed this contract and decided to refer it.</p>
 
       <h3>Action requested</h3>
       <p>We request your office to consider this contract for a desk review and to tell us your decision by <b>${B.date(iso(due))}</b>. <b>This is a request for review, not a finding of irregularity.</b></p>
       <p>The reviewer asks your office to look at this: ${esc(why)}</p>
-      <p>The contract carries mark ${c.tier} (${esc(B.tierName[c.tier])}) on the list of ${B.date(pub.snapshot)}, method ${esc(pub.method)}. It is number ${pos} of ${peers.length} mark ${c.tier} contracts in ${esc(reg)}. Within a mark, larger contracts come first, so this is an order of size, not a score.</p>
+      <p>The contract carries flag ${c.tier} (${esc(B.tierName[c.tier])}) on the list of ${B.date(pub.snapshot)}, method ${esc(pub.method)}. It is number ${pos} of ${peers.length} flag ${c.tier} contracts in ${esc(reg)}. Within a flag, larger contracts come first, so this is an order of size, not a score.</p>
 
       <h3>The contract</h3>
       ${table('24,50,26', ['Item', 'Value', 'Source'], facts.map(r => [`<b>${esc(r[0])}</b>`, esc(r[1]), esc(r[2])]))}
 
-      <h3>Why it was marked, and how strong the evidence is</h3>
+      <h3>Why it was flagged, and how strong the evidence is</h3>
       <p>${OVERALL[c.tier]}</p>
       ${table('15,37,25,23', ['Sign', 'What the record shows', 'Strength of evidence', 'Source'], signs.map(r => [`<b>${sign(r)}</b>`, esc(r.text) + (r.note ? ` ${esc(r.note)}` : ''), STRENGTH[r.basis], srcOf(r)]))}
-      ${held ? `<p>The review team also holds one unconfirmed lead, a name match only. It counts toward mark C, but it is not evidence and is left out here.${c.tier === 'C' && c.signals < 4 ? ' Without it, this contract would not reach mark C.' : ''} It can be discussed with your office on request.</p>` : ''}
+      ${held ? `<p>The review team also holds one unconfirmed lead, a name match only. It counts toward flag C, but it is not evidence and is left out here.${c.tier === 'C' && c.signals < 4 ? ' Without it, this contract would not reach flag C.' : ''} It can be discussed with your office on request.</p>` : ''}
 
       <h3>What we checked and did not flag</h3>
       ${clear.length ? `<ul>${clear.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p>No other check came back clear.</p>'}
@@ -218,7 +223,7 @@ const BR = (() => {
 
       <h3>Attachments</h3>
       <ul class="m-box">${att.map((x, i) => `<li>(${letter(i)}) ${esc(x)}</li>`).join('')}</ul>
-      <p class="m-foot">A BantAI mark is a request to check. It does not say that anyone did wrong. Digital seal of the list: ${esc(pub.sha256)}.</p>`;
+      <p class="m-foot">A BantAI flag is a request to check. It does not say that anyone did wrong. Digital seal of the list: ${esc(pub.sha256)}.</p>`;
   }
 
   /* ---------- Word file, built from the memo as edited on screen ---------- */
@@ -228,12 +233,12 @@ const BR = (() => {
     node.childNodes.forEach(n => {
       if (n.nodeType === 3) {
         if (!n.nodeValue) return;
-        const pr = (fmt.b ? '<w:b/>' : '') + (fmt.mark ? '<w:highlight w:val="yellow"/>' : '') + (fmt.small ? '<w:sz w:val="17"/>' : '');
+        const pr = (fmt.b ? '<w:b/>' : '') + (fmt.flag ? '<w:highlight w:val="yellow"/>' : '') + (fmt.small ? '<w:sz w:val="17"/>' : '');
         out += `<w:r>${pr ? `<w:rPr>${pr}</w:rPr>` : ''}<w:t xml:space="preserve">${xml(n.nodeValue.replace(/\s+/g, ' '))}</w:t></w:r>`;
       } else if (n.nodeType === 1) {
         const t = n.tagName;
         if (t === 'BR') out += '<w:r><w:br/></w:r>';
-        else out += runs(n, { ...fmt, b: fmt.b || t === 'B' || t === 'STRONG', mark: fmt.mark || t === 'MARK', small: fmt.small || t === 'A' });
+        else out += runs(n, { ...fmt, b: fmt.b || t === 'B' || t === 'STRONG', flag: fmt.flag || t === 'MARK', small: fmt.small || t === 'A' });
       }
     });
     return out;
@@ -325,10 +330,12 @@ const BR = (() => {
 
   /* ---------- decision panel ---------- */
   const LOCKED = new Set(['escalate', 'clear']);
-  function mount({ c, list }) {
-    const cl = mountChecklist(c, () => gate());
-    const all = read('bantai-decisions', {}), mine = all[c.id] || {};
+  async function mount({ c, list }) {
+    const team = await B.reviews();
+    const mine = team[c.id] || {};
+    const cl = mountChecklist(c, () => gate(), mine);
     let pick = mine.pick || null;
+    if (mine.pick) { const lab = { escalate: 'Escalate', monitor: 'Monitor', clear: 'No concern', error: 'Data error' }[mine.pick]; $('lastBy').textContent = `Latest: ${lab}${mine.by ? ' by ' + mine.by : ''}, ${B.date(mine.at)}.`; }
     $('why').value = mine.why || '';
     const buttons = [...document.querySelectorAll('[data-d]')];
     const panel = $('memoPanel'), derr = $('derr');
@@ -336,18 +343,20 @@ const BR = (() => {
       <label class="small mf" for="mTo">Send to</label><select id="mTo" class="mi">${Object.entries(OFFICES).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('')}</select>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div><label class="small mf" for="mDays">Reply within (working days)</label><input id="mDays" class="mi" type="number" min="1" max="90" value="15"></div>
-        <div><label class="small mf" for="mRev">Your reviewer ID</label><input id="mRev" class="mi" maxlength="20" placeholder="R-03" value="${esc(read('bantai-reviewer-tag', ''))}"></div></div>
+        </div>
       <button class="btn dark" id="mGen" style="width:100%;justify-content:center;min-height:44px;margin-top:14px">Generate referral memo</button>
       <p class="tiny muted" style="margin:8px 0 0">A request for review, never a finding. The memo uses your reason above.</p></div>`;
-    function persist() {
-      all[c.id] = { pick, why: $('why').value.trim(), at: new Date().toISOString() };
-      write('bantai-decisions', all);
+    $('mRev').value = read('bantai-reviewer-tag', '') || '';
+    async function persist() {
+      const by = $('mRev').value.trim(); write('bantai-reviewer-tag', by);
+      const at = new Date().toISOString(); cl.state.__at = at; cl.save();
+      const steps = Object.fromEntries(c.checks.map(t => [t, { done: !!(cl.state[t] || {}).done, note: (cl.state[t] || {}).note || '' }]));
+      return B.saveReview(c.id, { pick, why: $('why').value.trim(), by, at, steps });
     }
     function gate() {
       const open = cl.allDone(), n = c.checks.length;
       if (!open && LOCKED.has(pick)) {
-        if (all[c.id]) { delete all[c.id].pick; write('bantai-decisions', all); }
-        pick = null; derr.textContent = 'A step is no longer ticked, so that decision was cleared.';
+        pick = null; persist(); derr.textContent = 'A step is no longer ticked, so that decision was cleared.';
       }
       buttons.forEach(b => {
         const lock = !open && LOCKED.has(b.dataset.d);
@@ -361,14 +370,14 @@ const BR = (() => {
     buttons.forEach(b => b.onclick = () => { if (b.disabled) return; pick = b.dataset.d; derr.textContent = ''; gate(); });
     $('save').onclick = () => {
       if (!pick) { derr.textContent = 'Choose a decision first.'; return; }
-      persist();
-      const s = $('save'); s.textContent = 'Saved'; setTimeout(() => s.textContent = 'Save decision', 1500);
+      const s = $('save'); s.disabled = true; s.textContent = 'Saving…';
+      persist().then(ok => { s.disabled = false; s.textContent = 'Save decision'; $('lastBy').textContent = ''; $('saveMsg').textContent = ok ? 'Saved for the review team.' : 'Saved here, but not yet sent to the team. It will be sent again the next time you open a page.'; });
     };
     $('mGen').onclick = async () => {
       const why = $('why').value.trim();
       if (!why) { derr.textContent = 'Write your reason first. The memo tells the office what to look at.'; $('why').focus(); return; }
       derr.textContent = ''; persist();
-      const rev = $('mRev').value.trim(); write('bantai-reviewer-tag', rev);
+      const rev = $('mRev').value.trim();
       const days = Math.max(1, Math.min(90, parseInt($('mDays').value, 10) || 15));
       const steps = c.checks.map(t => ({ text: t, ...(cl.state[t] || {}) }));
       const pub = await B.publicData();
