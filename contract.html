@@ -25,7 +25,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
   const tierChip = `<span class="t t${c.tier}" style="height:28px;padding:0 10px;font-size:13px">${c.tier} · ${B.tierName[c.tier]}</span>`;
   const place = [c.city, c.province].filter(Boolean).join(', ');
   const icon = r => r.basis === 'A' ? '<span class="t tA" style="flex:none">A</span>' : r.basis === 'B' ? '<span class="t tB" style="flex:none">B</span>' : '<span class="t tS" style="flex:none;box-sizing:border-box">S</span>';
-  const reasons = c.reasons.map(r => `<div class="reason">${icon(r)}<div style="min-width:0"><div style="font-size:16px;font-weight:500;line-height:1.45">${B.esc(r.text)}</div><div class="small muted" style="margin-top:6px">${r.basis === 'A' ? 'Official record' : r.basis === 'B' ? 'Rule' : 'Signal · ' + B.esc(r.family)}${r.note ? ' · ' + B.esc(r.note) : ''}${r.source ? ` · <a href="${B.esc(r.source)}" target="_blank" rel="noopener">source</a>` : ''}</div></div></div>`).join('');
+  const reasons = c.reasons.map(r => `<div class="reason">${icon(r)}<div style="min-width:0"><div style="font-size:16px;font-weight:500;line-height:1.45">${B.esc(r.text)}</div><div class="small muted" style="margin-top:6px">${r.basis === 'A' ? 'Official record' : r.basis === 'B' ? 'Rule' : 'Risk family · ' + B.esc(r.family)}${r.note ? ' · ' + B.esc(r.note) : ''}${r.source ? ` · <a href="${B.esc(r.source)}" target="_blank" rel="noopener">source</a>` : ''}</div></div></div>`).join('');
 
   // timeline
   const ev = c.events.slice();
@@ -76,7 +76,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
     const cBody = fams.map(f => `<div style="padding:6px 0;border-top:1px solid var(--line2)"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;padding-top:4px"><span>${B.esc(f.family)}</span><span class="tiny" style="font-weight:500;color:${f.on ? 'var(--ink)' : 'var(--faint)'}">${f.on ? 'counts' : ''}</span></div>${f.items.map(row).join('')}</div>`).join('');
     return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;align-items:start">
       ${col('A', 'Official record', m.A.map(row).join(''), nA)}${col('B', 'Rules', m.B.map(row).join(''), nB)}
-      ${col('C', 'Signal families', `<div class="tiny muted" style="margin-bottom:4px">${nC} of 7 families · 3 or more makes mark C</div>` + cBody, nC)}</div>
+      ${col('C', 'Risk families', `<div class="tiny muted" style="margin-bottom:4px">${nC} of ${fams.length} risk families · 3 or more makes mark C</div>` + cBody, nC)}</div>
       <p class="tiny muted" style="margin:10px 0 0;display:flex;gap:18px;flex-wrap:wrap"><span>● triggered</span><span>○ checked, clear</span><span>— not checked: data missing</span></p>`;
   }
   const A = (analyses || {})[c.id];
@@ -126,10 +126,11 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
       ${tl || prog ? `<section><p class="label">Timeline and progress</p>${tl}${prog}</section>` : ''}
       ${c.lat ? `<section><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px"><p class="label" style="margin:0">Site</p><div class="seg" role="group" aria-label="Map layer"><button class="on" data-l="map">Map</button><button data-l="sat">Satellite</button><button data-l="hist">Satellite over time</button></div></div>
         <div id="map" role="region" aria-label="Map of the contract site"></div>
+        <p class="small" id="capt" aria-live="polite" style="margin:8px 0 0;color:var(--ink2)"></p>
         <div id="hist" hidden style="margin-top:12px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:0">
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><button class="chip" id="hBefore">Before the start</button><button class="chip" id="hLatest">Latest</button>
           <label class="small muted" style="display:flex;align-items:center;gap:10px;flex:1 1 260px">Release <input id="hRange" type="range" min="0" max="0" value="0" style="flex:1"></label><span class="num small" id="hDate"></span></div>
-          <p class="tiny muted" style="margin:8px 0 0">Esri World Imagery archive (Wayback). The date is when the mosaic was released; the photo of this spot may be older. Compare releases before the start and now.</p>
+          <p class="tiny muted" style="margin:8px 0 0">Esri World Imagery archive (Wayback). The release date is when the archive was published; the date the photo at the marker was taken is shown under the map. Compare releases before the start and now.</p>
         </div>
         <p class="small muted" style="margin:10px 0 0">${B.esc(c.loc_note)} <span class="num">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span> · <a href="https://www.openstreetmap.org/?mlat=${c.lat}&mlon=${c.lon}#map=16/${c.lat}/${c.lon}" target="_blank" rel="noopener">Open in OpenStreetMap</a></p></section>` : ''}
       <section><p class="label">Money</p><div class="kv">
@@ -156,16 +157,45 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
     const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(map);
     const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri and its providers' });
     L.circleMarker([c.lat, c.lon], { radius: 9, color: '#FFFFFF', weight: 3, fillColor: '#C4362C', fillOpacity: 1 }).addTo(map);
-    let wb = null, rel = null;
+    let wb = null, rel = null, cfg = null, mode = 'map', cur = null;
+    // Capture date of the photo at the marker: Esri's imagery metadata for the release shown (the live
+    // satellite layer is the newest release). Layer number = 23 - zoom, as in Esri's own Wayback app.
+    const capt = document.getElementById('capt');
+    async function loadCfg() {
+      if (!cfg) cfg = await (await fetch('https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json')).json();
+      return cfg;
+    }
+    async function showCapture(metaUrl) {
+      if (!capt) return;
+      if (!metaUrl) { capt.textContent = ''; return; }
+      capt.textContent = 'Looking up when this image was taken…';
+      const layer = Math.max(0, Math.min(13, 23 - map.getZoom()));
+      const q = new URLSearchParams({ f: 'json', where: '1=1', outFields: 'SRC_DATE2,NICE_DESC,SRC_DESC,SAMP_RES', returnGeometry: 'false',
+        geometry: JSON.stringify({ spatialReference: { wkid: 4326 }, x: c.lon, y: c.lat }), geometryType: 'esriGeometryPoint', spatialRel: 'esriSpatialRelIntersects' });
+      try {
+        const d = await (await fetch(`${metaUrl}/${layer}/query?${q}`)).json();
+        const at = d && d.features && d.features[0] && d.features[0].attributes;
+        if (metaUrl !== cur) return;  // the user switched layers meanwhile
+        if (!at || !at.SRC_DATE2) { capt.textContent = 'Capture date not published for this spot at this zoom.'; return; }
+        const day = new Date(at.SRC_DATE2).toISOString().slice(0, 10);
+        capt.innerHTML = `<b>Image of this spot taken ${B.date(day)}</b>` + (at.NICE_DESC ? ` · ${B.esc(at.NICE_DESC)}` : '') +
+          (at.SRC_DESC ? ` (${B.esc(at.SRC_DESC)})` : '') + (at.SAMP_RES ? ` · ${(+at.SAMP_RES).toFixed(1)} m per pixel` : '') + ' · Esri imagery metadata';
+      } catch (e) { if (metaUrl === cur) capt.textContent = 'Capture date could not be reached from this browser.'; }
+    }
+    const setCapture = url => { cur = url; showCapture(url); };
+    map.on('zoomend', () => { if (mode !== 'map') showCapture(cur); });
     const showRel = i => { const r = rel[i]; if (wb) map.removeLayer(wb);
       wb = L.tileLayer(r.url, { maxZoom: 19, attribution: 'Imagery © Esri (World Imagery Wayback)' }).addTo(map);
-      document.getElementById('hDate').textContent = B.date(r.date); document.getElementById('hRange').value = i; };
+      document.getElementById('hDate').textContent = B.date(r.date); document.getElementById('hRange').value = i; setCapture(r.meta); };
+    async function newestMeta() {
+      try { const v = Object.values(await loadCfg()).filter(x => x.metadataLayerUrl).sort((a, b) => (b.releaseDatetime || 0) - (a.releaseDatetime || 0) || String(b.itemTitle).localeCompare(String(a.itemTitle)))[0]; return v && v.metadataLayerUrl; }
+      catch (e) { return null; }
+    }
     async function history() {
       const box = document.getElementById('hist'); box.hidden = false;
       if (!rel) {
         try {
-          const cfg = await (await fetch('https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json')).json();
-          rel = Object.values(cfg).map(v => ({ date: (v.itemTitle.match(/\d{4}-\d{2}-\d{2}/) || [''])[0],
+          rel = Object.values(await loadCfg()).map(v => ({ date: (v.itemTitle.match(/\d{4}-\d{2}-\d{2}/) || [''])[0], meta: v.metadataLayerUrl,
             url: v.itemURL.replace('{level}', '{z}').replace('{row}', '{y}').replace('{col}', '{x}') })).filter(r => r.date).sort((a, b) => a.date.localeCompare(b.date));
         } catch (e) { box.innerHTML = '<p class="small muted" style="margin:0">The imagery archive could not be reached from this browser.</p>'; return; }
         const rg = document.getElementById('hRange'); rg.max = rel.length - 1; rg.oninput = () => showRel(+rg.value);
@@ -180,14 +210,17 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
       document.querySelectorAll('[data-l]').forEach(x => x.classList.toggle('on', x === b));
       [osm, sat].forEach(l => map.removeLayer(l)); if (wb) map.removeLayer(wb);
       document.getElementById('hist').hidden = b.dataset.l !== 'hist';
-      if (b.dataset.l === 'map') osm.addTo(map); else if (b.dataset.l === 'sat') sat.addTo(map); else history();
+      mode = b.dataset.l;
+      if (mode === 'map') { osm.addTo(map); setCapture(null); }
+      else if (mode === 'sat') { sat.addTo(map); cur = 'pending'; newestMeta().then(u => setCapture(u)); }
+      else history();
     });
   }
   const aiBtn = document.getElementById('aiBtn');
   if (aiBtn) {
     const reqs = JSON.parse(localStorage.getItem('bantai-ai-req') || '{}');
     const msg = t => document.getElementById('aiMsg').textContent = t;
-    if (reqs[c.id]) msg(`Requested ${B.date(reqs[c.id])}. Requests are collected every 2 hours; the review appears here after the next run.`);
+    if (reqs[c.id]) msg(`Requested ${B.date(reqs[c.id])}. Requests are collected about every hour; the review usually appears here within a few hours.`);
     aiBtn.onclick = async () => {
       if (!relay) { msg('The request channel is not set up yet.'); return; }
       aiBtn.disabled = true; msg('Sending…');
@@ -195,7 +228,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
         const r = await fetch('https://ntfy.sh/' + relay, { method: 'POST', body: c.id });
         if (!r.ok) throw 0;
         reqs[c.id] = new Date().toISOString(); localStorage.setItem('bantai-ai-req', JSON.stringify(reqs));
-        msg('Requested. Requests are collected every 2 hours; the review appears here after the next run.');
+        msg('Requested. Requests are collected about every hour; the review usually appears here within a few hours.');
       } catch (e) { aiBtn.disabled = false; msg('Could not send the request. Check the connection and try again.'); }
     };
   }

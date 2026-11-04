@@ -29,7 +29,9 @@ const B = (() => {
   async function allContracts() {
     const p = await publicData();
     const r = await reviewerData();
-    return { list: r ? p.contracts.concat(r.contracts) : p.contracts.slice(), reviewer: !!r,
+    const extra = (r && r.a_extra) || {};   // reviewer-only detail on public contracts (Affiliation leads)
+    const pubList = p.contracts.map(c => extra[c.id] ? { ...c, ...extra[c.id] } : c);
+    return { list: r ? pubList.concat(r.contracts) : p.contracts.slice(), reviewer: !!r,
              analyses: (r && r.analyses) || {}, relay: (r && r.relay) || '' };
   }
 

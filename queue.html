@@ -44,7 +44,7 @@ const COLS = [
   { key: 'tier', label: 'Mark', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 320 },
   { key: 'region', label: 'Region', w: 150 }, { key: 'office', label: 'Office', w: 170, off: true }, { key: 'contractor', label: 'Contractor', w: 230, off: true },
   { key: 'year', label: 'Year', w: 70, num: 1, off: true }, { key: 'amount', label: '₱ million', w: 110, num: 1 }, { key: 'progress', label: 'Done %', w: 84, num: 1, off: true },
-  { key: 'signals', label: 'Signals', w: 80, num: 1 }, { key: 'reason', label: 'Main reason', w: 280 }, { key: 'status', label: 'Status', w: 120, off: true }
+  { key: 'signals', label: 'Risk families', w: 110, num: 1 }, { key: 'reason', label: 'Main reason', w: 280 }, { key: 'status', label: 'Status', w: 120, off: true }
 ];
 const FILTERS = [
   { key: 'tier', name: 'Mark', type: 'chips', opts: ['A', 'B', 'C'] },
@@ -53,8 +53,8 @@ const FILTERS = [
   { key: 'year', name: 'Year', type: 'range', lo: 'from', hi: 'to' },
   { key: 'amount', name: 'Amount', type: 'range', lo: 'min', hi: 'max', unit: '₱ million' },
   { key: 'progress', name: 'Work done', type: 'range', lo: 'from', hi: 'to', unit: '%' },
-  { key: 'signals', name: 'Signals at least', type: 'min', opts: ['1', '2', '3', '4'] },
-  { key: 'fams', name: 'Has signal', type: 'all', opts: ['Tender', 'Price', 'Contractor', 'Concentration', 'Site', 'Licence limit', 'Delivery'] },
+  { key: 'signals', name: 'Risk families at least', type: 'min', opts: ['1', '2', '3', '4'] },
+  { key: 'fams', name: 'Risk family', type: 'all', opts: ['Tender', 'Price', 'Contractor', 'Concentration', 'Site', 'Affiliation', 'Delivery'] },
   { key: 'tags', name: 'Official or rule', type: 'all', opts: ['Licence revoked', 'Named in a record', 'Award above budget', 'Above licence limit'] },
   { key: 'review', name: 'Review', type: 'chips', opts: ['Not reviewed', 'Escalate', 'Monitor', 'No concern', 'Data error'] }
 ];
@@ -93,7 +93,9 @@ B.allContracts().then(({ list, reviewer }) => {
     document.getElementById('counts').innerHTML = (REV ? box(p.totals.marked, 'marked') : '') + box(t.A, 'A · official', 'a') +
       (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + box(Object.keys(decisions()).length, 'decided on this device') : '');
     if (!REV) S.shown = ['region', 'amount', 'tags'];
+    loadView();
     draw();
+    restoreScroll();
   });
 });
 
@@ -120,7 +122,37 @@ function cell(r, c) {
   if (k === 'progress') return r.progress == null ? '—' : r.progress.toFixed(1);
   return B.esc(r[k] ?? '—');
 }
+// The table view (search, filters, grouping, sort, open panels) is kept on this device until changed;
+// public and reviewer views are kept apart. The scroll position is kept for the session, for coming back.
+const VIEW_KEY = () => 'bantai-view-' + (REV ? 'rev' : 'pub');
+function saveView() {
+  try {
+    localStorage.setItem(VIEW_KEY(), JSON.stringify({ q: S.q, group: S.group, vals: S.vals, shown: S.shown, sort: S.sort, dir: S.dir,
+      fopen: !document.getElementById('fpanel').hidden, copen: !document.getElementById('cpanel').hidden }));
+  } catch (e) { /* storage unavailable: the view is simply not kept */ }
+}
+function loadView() {
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(VIEW_KEY()) || 'null'); } catch (e) { v = null; }
+  if (!v) return;
+  Object.assign(S, { q: v.q || '', group: v.group || '', vals: v.vals || {}, shown: v.shown || S.shown, sort: v.sort || 'rank', dir: v.dir || 1 });
+  document.getElementById('q').value = S.q;
+  document.getElementById('group').value = S.group;
+  [['fbtn', 'fpanel', v.fopen], ['cbtn', 'cpanel', v.copen]].forEach(([b, pnl, open]) => {
+    document.getElementById(pnl).hidden = !open;
+    document.getElementById(b).setAttribute('aria-expanded', String(!!open));
+    document.getElementById(b).classList.toggle('dark', !!open);
+  });
+}
+function restoreScroll() {
+  let y = 0;
+  try { y = +sessionStorage.getItem('bantai-queue-y') || 0; } catch (e) { y = 0; }
+  if (y) requestAnimationFrame(() => window.scrollTo(0, y));
+}
+window.addEventListener('pagehide', () => { try { sessionStorage.setItem('bantai-queue-y', String(window.scrollY)); } catch (e) { /* ignore */ } });
+
 function draw() {
+  saveView();
   let rows = ROWS.filter(pass);
   const k = S.sort === 'amount' ? 'amountM' : S.sort;
   rows.sort((a, b) => { const x = a[k], y = b[k]; return (typeof x === 'number' || typeof y === 'number' ? (x ?? -1) - (y ?? -1) : String(x ?? '').localeCompare(String(y ?? ''))) * S.dir; });
