@@ -23,6 +23,12 @@ const B = (() => {
     try { priv = await decrypt(enc, pass.trim()); sessionStorage.setItem(KEY, pass.trim()); return priv; }
     catch (e) { sessionStorage.removeItem(KEY); return null; }
   }
+  // A reviewer-only file, opened in the browser with the key already entered.
+  async function openEnc(url) {
+    const pass = sessionStorage.getItem(KEY);
+    if (!pass) return null;
+    return decrypt(await (await fetch(url, { cache: 'no-cache' })).json(), pass.trim());
+  }
   const isReviewer = () => !!sessionStorage.getItem(KEY);
   function signOut() { sessionStorage.removeItem(KEY); location.href = 'index.html'; }
 
@@ -63,7 +69,7 @@ const B = (() => {
   const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function date(s) { if (!s) return '—'; const [y, m, d] = s.slice(0, 10).split('-'); return `${+d} ${MON[+m - 1]} ${y}`; }
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const tierName = { A: 'Official record', B: 'Rule broken', C: 'Several signals' };
+  const tierName = { A: 'Official record', B: 'Rule triggered', C: 'Risk signals' };
 
-  return { publicData, reviewerData, allContracts, isReviewer, header, n, peso, date, esc, tierName, signOut };
+  return { publicData, reviewerData, openEnc, allContracts, isReviewer, header, n, peso, date, esc, tierName, signOut };
 })();

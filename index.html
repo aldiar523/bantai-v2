@@ -15,6 +15,19 @@
 .cta{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 20px;font-weight:700;font-size:15px;text-decoration:none!important}
 .hero .principle{display:flex;gap:14px;align-items:flex-start;margin-top:22px;max-width:640px;font-family:var(--serif);font-style:italic;font-size:clamp(16px,1.4vw,19px);line-height:1.4;color:#fff}
 .hero .principle::before{content:"";flex:0 0 36px;height:4px;background:var(--yellow);margin-top:.6em}
+.hero h1{max-width:22ch}
+.hero::before{background:linear-gradient(180deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.58) 45%,rgba(0,0,0,.9) 100%)}
+.ident{border-left:5px solid var(--red);padding:2px 0 2px 16px;margin-bottom:22px}
+.ident-name{font-family:var(--serif);font-weight:800;font-size:clamp(26px,3vw,38px);line-height:1.1;letter-spacing:-.01em;color:#fff}
+.ident-sub{font-size:clamp(14px,1.3vw,17px);line-height:1.4;color:#ECE8DF;margin-top:6px}
+.mcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px;max-width:880px}
+.mcard{display:block;background:rgba(14,16,20,.82);border:1px solid rgba(255,255,255,.2);border-top:5px solid var(--mc);padding:16px 18px 18px;color:#fff;text-decoration:none!important}
+.mcard:hover{background:rgba(14,16,20,.94)}.mcard:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.mcard-top{display:flex;justify-content:space-between;align-items:center}.mcard-top svg{color:var(--mn)}
+.mcard-l{font-family:var(--mono);font-weight:600;font-size:13px;background:var(--mc);color:var(--mi);min-width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center}
+.mcard-n{font-family:var(--mono);font-weight:600;font-size:clamp(34px,4vw,46px);line-height:1;margin-top:12px;color:var(--mn);letter-spacing:-.02em}
+.mcard-p{font-size:13px;color:#CFCBC2;margin-top:4px}.mcard-t{font-weight:700;font-size:16px;margin-top:10px}.mcard-d{font-size:13px;line-height:1.4;color:#D8D4CB;margin-top:4px}
+@media (max-width:760px){.mcards{grid-template-columns:1fr}.mcard-n{margin-top:6px}}
 @media (max-width:900px){.lead,.where{grid-template-columns:1fr}}
 </style>
 
@@ -25,10 +38,11 @@
 
 <section class="hero" style="background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/JfFloodControlProjectMeycauayan00031fvf_01.JPG?width=2000')">
   <div class="col">
+    <div class="ident"><div class="ident-name">Project BantAI</div><div class="ident-sub">AI-Assisted Public Infrastructure Integrity Monitoring Tool <span id="heroYears" style="color:#F4D35E;font-weight:600;white-space:nowrap">2016 to 2026</span></div></div>
     <div class="kicker" style="color:#F4D35E" id="kick">This week</div>
     <h1 id="headline">Open public works contracts worth a closer look</h1>
-    <p class="dek" id="dek">BantAI reads the whole DPWH project list every Monday and marks the open contracts to check first.</p>
     <p class="principle">A mark is a request to check. It is never a finding, and it never says that anyone did wrong.</p>
+    <div class="mcards" id="mcards"></div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:26px">
       <a class="cta" href="queue.html" style="background:var(--red);color:#fff">See the official records →</a>
       <a class="cta" href="method.html" style="border:2px solid #fff;color:#fff">How it works</a>
@@ -103,7 +117,7 @@
 <section class="dark" style="padding:clamp(36px,7vh,60px) 0">
   <div class="col" style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:32px">
     <div><div class="kicker" style="color:#F4D35E">Sealed</div><h2 class="h2" style="color:#fff;max-width:640px">This week's list cannot be changed afterwards.</h2>
-      <p style="margin-top:14px;max-width:620px">Every Monday's list gets a SHA-256 fingerprint in a public ledger, so it can later be compared with audits, cases and statements that come out.</p></div>
+      <p style="margin-top:14px;max-width:620px">Every Monday's list gets a digital seal in a public ledger. If anyone changes even one entry, the seal breaks. So the list can later be compared with audits, cases and statements that come out.</p></div>
     <div><div class="mono" id="seal" style="font-size:14px;color:#F4D35E;margin-bottom:14px"></div><a class="cta" href="ledger.html" style="border:2px solid #fff;color:#fff">See all weeks</a></div>
   </div>
 </section>
@@ -120,18 +134,22 @@ B.header('home');
 B.publicData().then(p => {
   const t = p.totals, tt = t.tiers, marked = tt.A + tt.B + tt.C;
   document.getElementById('kick').textContent = `This week · list of ${B.date(p.snapshot)}`;
-  document.getElementById('headline').textContent = `${B.n(marked)} open public works contracts worth a closer look`;
-  document.getElementById('dek').textContent = `Of ${B.n(t.open)} open contracts in the DPWH list, BantAI marked ${B.n(marked)} this week. ${B.n(tt.A)} of them already carry an official record: an audit finding, a court case, or a revoked licence.`;
+  document.getElementById('headline').textContent = `${B.n(marked)} out of ${B.n(t.open)} open DPWH contracts worth a closer look`;
+  const yrsSpan = p.span || [2016, new Date(p.snapshot).getFullYear()];
+  document.getElementById('heroYears').textContent = `${yrsSpan[0]} to ${yrsSpan[1]}`;
+  const ICON = { A: '<path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3.5 3.5 0 0 0 6 0L5 7Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7Z"/>', B: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 17.5v.5"/>', C: '<path d="M5 20v-5M10 20v-9M15 20v-13M20 20V4"/>' };
+  document.getElementById('mcards').innerHTML = [
+    ['A', 'var(--a)', '#fff', '#FF8A7A', 'Audit finding, court case, debarment or revoked licence', 'queue.html'],
+    ['B', 'var(--b)', '#2B1503', '#F7AE6B', 'A screening rule was triggered. It needs checking against the documents', 'method.html#marks'],
+    ['C', 'var(--c)', '#2E2400', '#F4D35E', 'Three or more independent risk families agree', 'method.html#marks']
+  ].map(([k, col, ink, num, desc, href]) => `<a class="mcard" href="${href}" style="--mc:${col};--mi:${ink};--mn:${num}"><div class="mcard-top"><span class="mcard-l">${k}</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg></div><div class="mcard-n">${B.n(tt[k])}</div><div class="mcard-p">${(100 * tt[k] / marked).toFixed(1)}% of the list</div><div class="mcard-t">${B.tierName[k].replace(/ (.)/, (m, x) => ' ' + x.toUpperCase())}</div><div class="mcard-d">${desc}</div></a>`).join('');
 
   // funnel
   const span = p.span || [2016, new Date(p.snapshot).getFullYear()];
   document.getElementById('funHead').textContent = `From every DPWH contract since ${span[0]} to this week's list`;
-  document.getElementById('funDek').textContent = `The DPWH list holds every contract from ${span[0]} to ${span[1]}, and most are finished. Only open contracts can still be checked before the money is paid. Every Monday BantAI re-reads the whole list and picks from the open ones. Bars are to scale.`;
+  document.getElementById('funDek').innerHTML = `The DPWH list holds every contract from ${span[0]} to ${span[1]}, and most are finished. Only open contracts can still be checked before the money is paid. Every Monday BantAI re-reads the whole list and picks from the open ones. Bars are to scale. <a href="method.html#marks">What A, B and C mean →</a>`;
   const rows = [[t.contracts, `every contract in the DPWH list, ${span[0]}–${span[1]}`], [t.open, `still open on ${B.date(p.snapshot)}: for procurement, not yet started, under way`], [marked, `on this week's list`]];
   let h = rows.map(([n, l]) => `<div class="row"><div class="lab"><div class="n">${B.n(n)}</div><div class="lt">${l}</div></div><div><div class="bar" style="width:${Math.max(0.25, 100 * n / t.contracts)}%"></div></div></div>`).join('');
-  h += `<div class="row" style="border-bottom:0"><div class="lab"><div class="lt" style="font-weight:700;color:var(--ink)">This week's ${B.n(marked)}, magnified</div><div class="lt"><a href="method.html#marks">What A, B and C mean →</a></div></div><div><div style="display:flex;height:clamp(48px,7vh,60px)">` +
-    [['A', 'var(--red)', '#fff', 'Official record'], ['B', 'var(--orange)', '#2B1503', 'Rule broken'], ['C', 'var(--yellow)', '#2E2400', 'Several signals']].map(([k, bg, fg, l]) =>
-      `<div style="width:${100 * tt[k] / marked}%;background:${bg};color:${fg};padding:8px 12px;overflow:hidden;white-space:nowrap"><div class="mono" style="font-size:clamp(16px,1.6vw,20px);font-weight:600">${k} ${B.n(tt[k])}</div><div style="font-size:12px;font-weight:600">${l}</div></div>`).join('') + `</div></div></div>`;
   document.getElementById('funnel').innerHTML = h;
 
   // lead story
@@ -175,7 +193,7 @@ B.publicData().then(p => {
   money('value');
   document.getElementById('reportHero').onclick = () => BReport.open('');
 
-  document.getElementById('seal').textContent = `${B.date(p.snapshot)} · SHA-256 ${p.sha256.slice(0, 12)}…`;
+  document.getElementById('seal').textContent = `${B.date(p.snapshot)} · Digital seal ${p.sha256.slice(0, 12)}…`;
   document.getElementById('method').textContent = `Method ${p.method} · updated every Monday`;
   document.getElementById('main').setAttribute('aria-busy', 'false');
 });

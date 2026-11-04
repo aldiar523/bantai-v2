@@ -16,6 +16,7 @@
     <div id="counts" style="display:flex;border-top:3px solid var(--ink);background:var(--card)"></div>
   </div>
 
+  <section id="casesPanel" class="panel" style="margin-top:16px;padding:18px" hidden aria-label="Cases reviewed"></section>
   <div style="margin-top:24px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
     <label class="field" style="flex:1 1 280px;min-width:0">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B675E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -42,10 +43,10 @@
 <script>
 B.header('queue');
 const COLS = [
-  { key: 'tier', label: 'Mark', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 320 },
+  { key: 'tier', label: 'Mark', w: 74 }, { key: 'id', label: 'Contract', w: 112 }, { key: 'short', label: 'Work', w: 280 },
   { key: 'region', label: 'Region', w: 150 }, { key: 'office', label: 'Office', w: 170, off: true }, { key: 'contractor', label: 'Contractor', w: 230, off: true },
   { key: 'year', label: 'Year', w: 70, num: 1, off: true }, { key: 'amount', label: '₱ million', w: 110, num: 1 }, { key: 'progress', label: 'Done %', w: 84, num: 1, off: true },
-  { key: 'signals', label: 'Risk families', w: 110, num: 1 }, { key: 'reason', label: 'Main reason', w: 280 }, { key: 'status', label: 'Status', w: 120, off: true },
+  { key: 'signals', label: 'Risk families', w: 110, num: 1 }, { key: 'reason', label: 'Main reason', w: 250 }, { key: 'status', label: 'Status', w: 120, off: true },
   { key: 'infra', label: 'Infrastructure type', w: 190, off: true }, { key: 'report', label: 'Report', w: 112 }
 ];
 const FILTERS = [
@@ -69,6 +70,24 @@ const def = k => COLS.find(c => c.key === k);
 const saveCols = () => localStorage.setItem('bantai-cols', JSON.stringify(S.cols));
 const decisions = () => JSON.parse(localStorage.getItem('bantai-decisions') || '{}');
 
+const DEC = { escalate: 'Escalate', monitor: 'Monitor', clear: 'No concern', error: 'Data error' };
+const reviewed = () => Object.entries(decisions()).filter(([, d]) => d.pick).sort((a, b) => String(b[1].at).localeCompare(String(a[1].at)));
+function casesBox() {
+  return `<button class="cases-btn" id="casesBtn" aria-expanded="false" aria-controls="casesPanel"><span class="num" style="font-size:26px;font-weight:600;display:block">${B.n(reviewed().length)}</span><span class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">Cases reviewed ▾</span></button>`;
+}
+function drawCases() {
+  const rows = reviewed(), byId = new Map(ROWS.map(r => [r.id, r]));
+  document.getElementById('casesPanel').innerHTML = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline"><h2 style="font-size:17px">Cases reviewed</h2><span class="small muted">Saved on this device. Other reviewers' cases do not show here yet.</span></div>` +
+    (rows.length ? `<div style="overflow-x:auto;margin-top:10px"><table class="ytab"><thead><tr><th>Contract</th><th>Mark</th><th>Work</th><th>Decision</th><th>Reason</th><th>Reviewed</th></tr></thead><tbody>${rows.map(([id, d]) => { const r = byId.get(id);
+      return `<tr><td><a class="rowlink" href="contract.html?id=${encodeURIComponent(id)}">${B.esc(id)}</a></td><td>${r ? `<span class="t t${r.tier}">${r.tier}</span>` : '—'}</td><td>${r ? B.esc(r.short) : 'Not on this week\'s list'}</td><td style="font-weight:600;white-space:nowrap">${B.esc(DEC[d.pick] || d.pick)}</td><td>${B.esc(d.why || '—')}</td><td class="num" style="white-space:nowrap">${d.at ? B.date(d.at) : '—'}</td></tr>`; }).join('')}</tbody></table></div>`
+      : '<p class="small muted" style="margin:10px 0 0">No cases yet. Decisions you save on a contract page will be listed here.</p>');
+}
+function wireCases() {
+  const b = document.getElementById('casesBtn'); if (!b) return;
+  b.onclick = () => { const p = document.getElementById('casesPanel'), open = p.hidden; p.hidden = !open; b.setAttribute('aria-expanded', String(open)); if (open) drawCases(); };
+}
+window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });   // back from a contract page: fresh counts
+
 function tagsOf(c) {
   const t = [];
   c.reasons.forEach(r => {
@@ -90,12 +109,13 @@ B.allContracts().then(({ list, reviewer }) => {
   B.publicData().then(p => {
     const t = p.totals.tiers;
     document.getElementById('title').textContent = REV ? 'Review queue' : 'Open contracts with an official record'; document.getElementById('kick').textContent = 'List of ' + B.date(p.snapshot);
-    document.getElementById('sub').innerHTML = REV ? `Open contracts marked this week. Sealed: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
+    document.getElementById('sub').innerHTML = REV ? `Open contracts marked this week. Digital seal: <span class="num">${p.sha256.slice(0, 8)}…${p.sha256.slice(-6)}</span>`
       : `Mark A only. Marks B and C are for the review team. <a href="signin.html">Reviewer sign-in</a> · <button id="reportAny" class="cl-link">Report what you see on any site</button>`;
     document.getElementById('reportAny')?.addEventListener('click', () => BReport.open(''));
     const box = (n, l, c) => `<div style="padding:12px 20px;border-right:1px solid var(--line2);${c ? `box-shadow:inset 0 -6px 0 var(--${c})` : ''}"><div class="num" style="font-size:26px;font-weight:600">${B.n(n)}</div><div class="tiny" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)">${l}</div></div>`;
     document.getElementById('counts').innerHTML = (REV ? box(p.totals.marked, 'marked') : '') + box(t.A, 'A · official', 'a') +
-      (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + box(Object.keys(decisions()).length, 'decided on this device') : '');
+      (REV ? box(t.B || 0, 'B · rule', 'b') + box(t.C || 0, 'C · signals', 'c') + casesBox() : '');
+    wireCases();
     if (!REV) S.shown = ['infra', 'region', 'amount', 'tags'];
     loadView();
     draw();
@@ -123,6 +143,7 @@ function cell(r, c) {
   if (k === 'tier') return `<span class="t t${r.tier}">${r.tier}</span>`;
   if (k === 'id') return `<a class="rowlink" href="contract.html?id=${encodeURIComponent(r.id)}">${r.id}</a>`;
   if (k === 'amount') return (r.amount / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (k === 'short') return B.esc(r.title);   // the full title, wrapped
   if (k === 'report') return `<button class="btn" style="min-height:30px;padding:0 10px;font-size:13px" data-report="${B.esc(r.id)}" aria-label="Report on contract ${B.esc(r.id)}">Report</button>`;
   if (k === 'progress') return r.progress == null ? '—' : r.progress.toFixed(1);
   return B.esc(r[k] ?? '—');
@@ -174,7 +195,7 @@ function draw() {
   else { const m = new Map(); rows.forEach(r => { const g = S.group === 'tier' ? r.tier + ' · ' + B.tierName[r.tier] : r[S.group]; if (!m.has(g)) m.set(g, []); m.get(g).push(r); }); m.forEach((rs, g) => groups.push({ label: g, rows: rs })); }
   groups.forEach(g => {
     if (g.label != null) html += `<div class="grp" style="min-width:${minw}px">${B.esc(g.label)}<span class="num muted" style="font-weight:400">${g.rows.length}</span></div>`;
-    html += g.rows.slice(0, 600).map(r => `<div class="tr" style="grid-template-columns:${grid};min-width:${minw}px">` + vis.map(c => `<div class="td ${def(c.key).num ? 'r num' : ''}" ${['short', 'reason', 'contractor'].includes(c.key) ? `title="${B.esc(r[c.key === 'short' ? 'title' : c.key])}"` : ''}>${cell(r, c)}</div>`).join('') + '</div>').join('');
+    html += g.rows.slice(0, 600).map(r => `<div class="tr" style="grid-template-columns:${grid};min-width:${minw}px">` + vis.map(c => `<div class="td ${def(c.key).num ? 'r num' : ''} ${['short', 'reason', 'region', 'office', 'contractor'].includes(c.key) ? 'wrap' : ''}">${cell(r, c)}</div>`).join('') + '</div>').join('');
   });
   if (!rows.length) html += `<div style="padding:40px 14px;text-align:center" class="muted">No contract matches these filters.</div>`;
   document.getElementById('table').innerHTML = html;

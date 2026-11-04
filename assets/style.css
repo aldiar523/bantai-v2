@@ -184,3 +184,13 @@ body.rp-open{overflow:hidden}
 .rp-hp{position:absolute;left:-9999px;height:1px;overflow:hidden}
 .cl-link{display:inline}
 @media (max-width:560px){.rp-3{grid-template-columns:1fr}.rp-ov{padding:0}.rp{max-height:100dvh;height:100dvh;max-width:none}}
+
+/* cases reviewed and ledger */
+.cases-btn{appearance:none;border:0;background:none;font:inherit;color:inherit;cursor:pointer;padding:12px 20px;text-align:left}.cases-btn:hover{background:var(--soft)}.cases-btn:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.lg{background:var(--card);border-top:3px solid var(--ink);padding:20px 22px;margin-top:16px}.lg.old{border-top-color:var(--line)}
+.lg h2{font-size:clamp(19px,2vw,23px);line-height:1.2}.lg-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;background:var(--ink);color:var(--paper);vertical-align:middle;margin-left:8px}.lg.old .lg-tag{background:var(--line2);color:var(--ink2)}
+.lg-seal{margin-top:14px;padding-top:12px;border-top:1px solid var(--line2)}.lg-seal b{display:block;font-size:13px}.lg-seal code{display:block;font-family:var(--mono);font-size:12px;overflow-wrap:anywhere;margin-top:3px;color:var(--ink2)}
+.lg-chk{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}.lg-res{font-size:14px;font-weight:600;line-height:1.5}
+
+/* wrapped text in the queue */
+.td.wrap{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.4;padding-top:10px;padding-bottom:10px}

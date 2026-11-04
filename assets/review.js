@@ -218,7 +218,7 @@ const BR = (() => {
 
       <h3>Attachments</h3>
       <ul class="m-box">${att.map((x, i) => `<li>(${letter(i)}) ${esc(x)}</li>`).join('')}</ul>
-      <p class="m-foot">A BantAI mark is a request to check. It does not say that anyone did wrong. List sealed with SHA-256 ${esc(pub.sha256)}.</p>`;
+      <p class="m-foot">A BantAI mark is a request to check. It does not say that anyone did wrong. Digital seal of the list: ${esc(pub.sha256)}.</p>`;
   }
 
   /* ---------- Word file, built from the memo as edited on screen ---------- */

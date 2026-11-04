@@ -26,7 +26,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   document.title = `BantAI — ${c.id}`;
   const tierChip = `<span class="t t${c.tier}" style="height:28px;padding:0 10px;font-size:13px">${c.tier} · ${B.tierName[c.tier]}</span>`;
   const place = [c.city, c.province].filter(Boolean).join(', ');
-  const icon = r => r.basis === 'A' ? '<span class="t tA" style="flex:none">A</span>' : r.basis === 'B' ? '<span class="t tB" style="flex:none">B</span>' : '<span class="t tS" style="flex:none;box-sizing:border-box">S</span>';
+  const icon = r => r.basis === 'A' ? '<span class="t tA" style="flex:none">A</span>' : r.basis === 'B' ? '<span class="t tB" style="flex:none">B</span>' : '<span class="t tC" style="flex:none">C</span>';
   const reasons = c.reasons.map(r => `<div class="reason">${icon(r)}<div style="min-width:0"><div style="font-size:16px;font-weight:500;line-height:1.45">${B.esc(r.text)}</div><div class="small muted" style="margin-top:6px">${r.basis === 'A' ? 'Official record' : r.basis === 'B' ? 'Rule' : 'Risk family · ' + B.esc(r.family)}${r.note ? ' · ' + B.esc(r.note) : ''}${r.source ? ` · <a href="${B.esc(r.source)}" target="_blank" rel="noopener">source</a>` : ''}</div></div></div>`).join('');
 
   // timeline
@@ -126,7 +126,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   </section>
   <div style="display:flex;flex-wrap:wrap;gap:40px;margin-top:32px">
     <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:44px">
-      <section><p class="label">Why it is in the list</p>${reasons}${c.context.length ? '<p class="small muted" style="margin:12px 0 0">Context, not counted: the province\'s share of elected officials from political families is above the national average.</p>' : ''}</section>
+      <section><p class="label">Why it is in the list</p>${reasons}${c.reasons.some(r => r.basis === 'S') ? '<p class="small muted" style="margin:12px 0 0">C marks a risk family, part of mark C. One alone is not mark C; three or more families make it.</p>' : ''}${c.context.length ? '<p class="small muted" style="margin:12px 0 0">Context, not counted: the province\'s share of elected officials from political families is above the national average.</p>' : ''}</section>
       ${reviewer ? (() => { const mine = reports.filter(r => r.contract === c.id); return mine.length ? `<section><p class="label">Public reports (${mine.length})</p><p class="small muted" style="margin:0 0 10px">Not checked. A report never changes a mark. Contact details and files are in the private repository under data/reports, by reference.</p>${mine.map(r => `<div class="reason"><div style="min-width:0"><div style="font-size:15px;line-height:1.5;white-space:pre-wrap">${B.esc(r.message)}</div><div class="small muted" style="margin-top:6px">${B.esc(r.category)} · ${B.date(r.at)} · ref <span class="num">${B.esc(r.ref)}</span> · ${r.files} file${r.files === 1 ? '' : 's'}</div></div></div>`).join('')}</section>` : ''; })() : ''}
       <section><p class="label">All checks</p>${matrix(c.matrix)}</section>
       ${tl || prog ? `<section><p class="label">Timeline and progress</p>${tl}${prog}</section>` : ''}

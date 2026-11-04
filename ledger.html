@@ -7,19 +7,114 @@
 </head>
 <body>
 <header id="top"></header>
-<main class="wrap" style="padding-top:32px;padding-bottom:64px">
+<main class="wrap" style="padding-top:32px;padding-bottom:64px;max-width:980px">
   <div class="kicker">Sealed lists</div>
   <h1>Weekly ledger</h1>
-  <p style="margin:12px 0 28px;line-height:1.6;color:var(--ink2);max-width:720px">Each Monday's list is saved with a SHA-256 fingerprint and committed to a public history. Anyone can later check that a list was not changed after the fact, and compare it with what became known since.</p>
-  <div class="tbl"><div id="rows"></div></div>
+  <p style="margin:12px 0 0;line-height:1.6;color:var(--ink2);max-width:720px">Each Monday's list gets a <b>digital seal</b>: a code calculated from every entry in the list. If anyone changes even one entry, the seal breaks. Seals are saved in a public history, so a list can later be compared with audits, cases and statements that come out.</p>
+  <p class="small muted" id="scope" style="margin:10px 0 0;max-width:720px;line-height:1.55"></p>
+  <section class="lg old" aria-labelledby="chkH">
+    <h2 id="chkH" style="font-size:17px">Check a file's seal</h2>
+    <p class="small muted" style="margin:6px 0 0;line-height:1.55">Choose a downloaded CSV file. Your browser calculates its seal and compares it with this ledger. The file is not sent anywhere. The seal protects the CSV; a PDF is a readable copy.</p>
+    <div class="lg-chk"><label class="btn" style="min-height:40px">Choose a CSV file<input type="file" id="chk" accept=".csv,text/csv" hidden></label><div class="lg-res" id="chkRes" role="status"></div></div>
+  </section>
+  <div id="rows"></div>
+  <p class="tiny muted" style="margin:18px 0 0;line-height:1.55">For technical readers: the digital seal is a SHA-256 hash of the CSV file, byte for byte. Two lists with the same seal are identical.</p>
 </main>
 <script src="assets/core.js"></script>
 <script>
 B.header('ledger');
+const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const longDate = s => { const [y, m, d] = s.split('-'); return `${+d} ${MONTH[+m - 1]} ${y}`; };
+const hex = async buf => [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(x => x.toString(16).padStart(2, '0')).join('');
+const REV = B.isReviewer();
+let LEDGER = [];
+
+function save(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function parseCsv(text) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+    else if (c !== '\r') f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  const head = rows.shift() || [];
+  return rows.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
+}
+// The file this viewer may download: reviewers the full sealed list, everyone else the public copy (mark A).
+async function getCsv(l) {
+  if (REV) { const d = await B.openEnc(`data/lists/${l.file}.enc.json`); if (!d) throw new Error('key'); return { text: d.csv, name: l.file, seal: l.sha256 }; }
+  const r = await fetch(`data/lists/${l.public_file}`, { cache: 'no-cache' }); if (!r.ok) throw new Error('file');
+  return { text: await r.text(), name: l.public_file, seal: l.public_seal };
+}
+function loadScript(src) {
+  return new Promise((ok, no) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+}
+async function makePdf(l, got) {
+  await loadScript('assets/vendor/jspdf.umd.min.js'); await loadScript('assets/vendor/jspdf.plugin.autotable.min.js');
+  const clean = s => String(s ?? '').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?');
+  const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  const rows = parseCsv(got.text), title = `Ledger as of ${longDate(l.snapshot_date)}`;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(`BantAI: ${title}`, 36, 40);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  doc.text(`Method ${l.method}. ${rows.length} contracts${REV ? ', full list (review team only)' : ', public copy: mark A only'}. A mark is a request to check, never a finding.`, 36, 56);
+  doc.text(`Digital seal of the CSV: ${got.seal}`, 36, 68);
+  doc.text('This PDF is a readable copy. The seal protects the CSV file; check it on the ledger page.', 36, 80);
+  doc.autoTable({ startY: 90, margin: { left: 36, right: 36, bottom: 36 }, styles: { fontSize: 7, cellPadding: 3, overflow: 'linebreak' }, headStyles: { fillColor: [18, 18, 18] },
+    head: [['No.', 'Mark', 'Contract', 'Office', 'PHP million', 'Contractor', 'Status', 'Why it is listed']],
+    columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 26 }, 2: { cellWidth: 52 }, 3: { cellWidth: 90 }, 4: { cellWidth: 44, halign: 'right' }, 5: { cellWidth: 130 }, 6: { cellWidth: 50 } },
+    body: rows.map(r => [r.rank, r.tier, r.contract_id, clean(r.office), (+r.amount_php / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), clean(r.contractor), clean(r.status), clean(r.official_reasons ?? r.reasons)]),
+    didDrawPage: () => { doc.setFontSize(7.5); doc.text(`${title} · page ${doc.getNumberOfPages()}`, 36, doc.internal.pageSize.getHeight() - 16); } });
+  return doc.output('blob');
+}
 B.publicData().then(p => {
-  document.getElementById('rows').innerHTML = `<div class="tr head" style="grid-template-columns:150px minmax(0,1fr) 90px 90px"><div class="th">List of</div><div class="th">SHA-256</div><div class="th r">Marked</div><div class="th r">Method</div></div>` +
-    p.ledger.slice().reverse().map(l => `<div class="tr" style="grid-template-columns:150px minmax(0,1fr) 90px 90px"><div class="td">${B.date(l.snapshot_date)}</div><div class="td num small" title="${l.sha256}">${l.sha256}</div><div class="td r num">${B.n(l.queue)}</div><div class="td r num">${l.method}</div></div>`).join('');
+  LEDGER = p.ledger;
+  document.getElementById('scope').textContent = REV
+    ? 'You are signed in, so downloads are the full sealed lists with marks A, B and C. Please do not share them outside the review team.'
+    : 'Public downloads hold mark A only, with their own seal. Marks B and C stay with the review team, so the full list is shown here by its seal alone.';
+  const latest = {}; p.ledger.forEach((l, i) => { latest[l.snapshot_date] = i; });
+  document.getElementById('rows').innerHTML = p.ledger.map((l, i) => {
+    const t = l.by_tier, isLast = latest[l.snapshot_date] === i;
+    const seal = REV ? l.sha256 : l.public_seal;
+    return { i, html: `<article class="lg ${i === p.ledger.length - 1 ? '' : 'old'}">
+      <h2>Ledger as of ${longDate(l.snapshot_date)}${i === p.ledger.length - 1 ? '<span class="lg-tag">In force</span>' : !isLast ? '<span class="lg-tag">Replaced</span>' : ''}</h2>
+      <p class="small muted" style="margin:6px 0 0">Method ${B.esc(l.method)} · ${B.n(l.queue)} contracts marked: A ${B.n(t.A)}, B ${B.n(t.B)}, C ${B.n(t.C)}${!isLast ? ' · kept as sealed; a later method re-sealed this date' : ''}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center">
+        <button class="btn dark" data-dl="csv" data-i="${i}">Download CSV</button><button class="btn" data-dl="pdf" data-i="${i}">Download PDF</button>
+        <span class="small muted">${REV ? 'Full list' : `Public copy: ${B.n(l.public_rows)} mark A contracts`}</span><span class="small" role="status" id="msg${i}"></span></div>
+      <div class="lg-seal"><b>Proof the file wasn't changed</b><code>${B.esc(seal)}</code>
+      ${REV ? '' : `<span class="tiny muted" style="display:block;margin-top:8px">Digital seal of the full list, with marks B and C:</span><code style="margin-top:2px">${B.esc(l.sha256)}</code>`}</div></article>` };
+  }).reverse().map(x => x.html).join('');
+  document.getElementById('rows').addEventListener('click', async e => {
+    const b = e.target.closest('[data-dl]'); if (!b) return;
+    const l = p.ledger[+b.dataset.i], msg = document.getElementById('msg' + b.dataset.i);
+    b.disabled = true; msg.textContent = 'Preparing…';
+    try {
+      const got = await getCsv(l);
+      const bytes = new TextEncoder().encode(got.text);
+      if (await hex(bytes) !== got.seal) { msg.textContent = 'This file does not match its seal. Please tell the team.'; return; }
+      if (b.dataset.dl === 'csv') save(new Blob([bytes], { type: 'text/csv' }), got.name);
+      else save(await makePdf(l, got), got.name.replace(/\.csv$/, '.pdf'));
+      msg.textContent = b.dataset.dl === 'csv' ? 'Downloaded. Seal checked.' : 'Downloaded.';
+    } catch (x) { msg.textContent = 'The file could not be prepared. Please try again.'; }
+    finally { b.disabled = false; }
+  });
 });
+document.getElementById('chk').onchange = async e => {
+  const f = e.target.files[0], out = document.getElementById('chkRes'); if (!f) return;
+  out.textContent = 'Checking…';
+  const h = await hex(await f.arrayBuffer());
+  const full = LEDGER.filter(l => l.sha256 === h), pub = LEDGER.filter(l => l.public_seal === h);
+  const names = a => [...new Set(a.map(l => `Ledger as of ${longDate(l.snapshot_date)} (method ${l.method})`))].join('; ');
+  out.textContent = full.length ? `Seal intact. This is the full list: ${names(full)}.` : pub.length ? `Seal intact. This is the public copy: ${names(pub)}.` : 'Seal broken. This file does not match any list in the ledger, so it was changed or is not a BantAI list.';
+  e.target.value = '';
+};
 </script>
 </body>
 </html>
