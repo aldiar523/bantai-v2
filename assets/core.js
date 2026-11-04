@@ -32,7 +32,7 @@ const B = (() => {
     const extra = (r && r.a_extra) || {};   // reviewer-only detail on public contracts (Affiliation leads)
     const pubList = p.contracts.map(c => extra[c.id] ? { ...c, ...extra[c.id] } : c);
     return { list: r ? pubList.concat(r.contracts) : p.contracts.slice(), reviewer: !!r,
-             analyses: (r && r.analyses) || {}, relay: (r && r.relay) || '' };
+             analyses: (r && r.analyses) || {}, relay: (r && r.relay) || '', reports: (r && r.reports) || [] };
   }
 
   const logo = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v3M8 6.5v3M8 12v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';

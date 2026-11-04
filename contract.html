@@ -11,11 +11,13 @@
 <main class="wrap" style="padding-top:24px;padding-bottom:64px" id="main"></main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="assets/core.js"></script>
+<script src="assets/review.js"></script>
+<script src="assets/report.js"></script>
 <script>
 B.header('queue');
 const id = new URLSearchParams(location.search).get('id');
 const M = document.getElementById('main');
-B.allContracts().then(({ list, reviewer, analyses, relay }) => {
+B.allContracts().then(({ list, reviewer, analyses, relay, reports }) => {
   const c = list.find(x => x.id === id);
   if (!c) {
     M.innerHTML = `<div class="lock"><h1 style="font-size:28px">Not available</h1><p class="muted" style="line-height:1.55">${id ? `Contract <span class="num">${B.esc(id)}</span> is not in this week's public list. ${reviewer ? '' : 'If it carries mark B or C, <a href="signin.html">sign in as a reviewer</a>.'}` : 'No contract ID given.'}</p><p><a href="queue.html">← Back to the list</a></p></div>`;
@@ -100,14 +102,17 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
   const side = reviewer ? `
     <section class="card" style="border-top:6px solid var(--red)">
       <h2 style="font-size:17px">Your decision</h2>
-      <p class="small muted" style="margin:6px 0 16px">Saved on this device for now. Team-wide recording is the next step.</p>
+      <p class="small muted" style="margin:6px 0 10px">Saved on this device for now. Team-wide recording is the next step.</p>
+      <p class="small" id="gate" role="status" style="margin:0 0 14px;line-height:1.5"></p>
       <div class="decide" role="radiogroup" aria-label="Decision">${[['escalate', 'Escalate'], ['monitor', 'Monitor'], ['clear', 'No concern'], ['error', 'Data error']].map(([k, l]) => `<button role="radio" aria-checked="false" data-d="${k}">${l}</button>`).join('')}</div>
       <label class="small" style="display:block;margin-top:14px;color:var(--ink2)">Reason<textarea id="why" rows="3" placeholder="One or two lines: what you saw and where" style="margin-top:6px"></textarea></label>
       <div class="err" id="derr" role="alert"></div>
       <button class="btn dark" id="save" style="width:100%;justify-content:center;min-height:44px">Save decision</button>
+      <div id="memoPanel" hidden></div>
     </section>
     ${ai}` : `
-    <section class="card"><h2 style="font-size:17px">For the review team</h2><p class="small muted" style="margin:8px 0 14px;line-height:1.55">Decisions and AI reviews are open to reviewers.</p><a class="btn" href="signin.html" style="text-decoration:none">Reviewer sign-in</a></section>`;
+    <section class="card"><h2 style="font-size:17px">For the review team</h2><p class="small muted" style="margin:8px 0 14px;line-height:1.55">Decisions and AI reviews are open to reviewers.</p><a class="btn" href="signin.html" style="text-decoration:none">Reviewer sign-in</a></section>
+    <section class="card"><h2 style="font-size:17px">See something on this site?</h2><p class="small muted" style="margin:8px 0 14px;line-height:1.55">Citizens, journalists and civil-society monitors can send what they observe.</p><button class="btn dark" id="reportBtn" style="width:100%;justify-content:center;min-height:44px">Report</button></section>`;
 
   M.innerHTML = `
   <a href="queue.html" class="small" style="text-decoration:none;color:var(--ink2)">← ${reviewer ? 'Queue' : 'Official records'}</a>
@@ -122,6 +127,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
   <div style="display:flex;flex-wrap:wrap;gap:40px;margin-top:32px">
     <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:44px">
       <section><p class="label">Why it is in the list</p>${reasons}${c.context.length ? '<p class="small muted" style="margin:12px 0 0">Context, not counted: the province\'s share of elected officials from political families is above the national average.</p>' : ''}</section>
+      ${reviewer ? (() => { const mine = reports.filter(r => r.contract === c.id); return mine.length ? `<section><p class="label">Public reports (${mine.length})</p><p class="small muted" style="margin:0 0 10px">Not checked. A report never changes a mark. Contact details and files are in the private repository under data/reports, by reference.</p>${mine.map(r => `<div class="reason"><div style="min-width:0"><div style="font-size:15px;line-height:1.5;white-space:pre-wrap">${B.esc(r.message)}</div><div class="small muted" style="margin-top:6px">${B.esc(r.category)} · ${B.date(r.at)} · ref <span class="num">${B.esc(r.ref)}</span> · ${r.files} file${r.files === 1 ? '' : 's'}</div></div></div>`).join('')}</section>` : ''; })() : ''}
       <section><p class="label">All checks</p>${matrix(c.matrix)}</section>
       ${tl || prog ? `<section><p class="label">Timeline and progress</p>${tl}${prog}</section>` : ''}
       ${c.lat ? `<section><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px"><p class="label" style="margin:0">Site</p><div class="seg" role="group" aria-label="Map layer"><button class="on" data-l="map">Map</button><button data-l="sat">Satellite</button><button data-l="hist">Satellite over time</button></div></div>
@@ -145,7 +151,7 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
           <div><div class="big" style="font-size:20px">${B.n(c.firm.open)}</div><div class="small muted">open now</div></div>
           <div><div class="big" style="font-size:20px">${B.peso(c.firm.value)}</div><div class="small muted">total value</div></div>
           <div><div class="big" style="font-size:20px">${B.n(c.firm.terminated)}</div><div class="small muted">terminated</div></div></div></div></section>
-      ${c.checks.length ? `<section><p class="label">What to check</p><ol style="margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.5">${c.checks.map(x => `<li>${B.esc(x)}</li>`).join('')}</ol></section>` : ''}
+      ${c.checks.length ? `<section id="whatToCheck"><p class="label">What to check</p>${reviewer ? '<div id="checklist"></div>' : `<ol style="margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.5">${c.checks.map(x => `<li>${B.esc(x)}</li>`).join('')}</ol>`}</section>` : ''}
     </div>
     <aside style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;gap:20px">${side}
       <section class="card"><h2 style="font-size:17px;margin-bottom:6px">Documents</h2>${docs}<button class="btn" onclick="print()" style="margin-top:14px;width:100%;justify-content:center;min-height:44px;background:var(--bg)">Print dossier (PDF)</button></section>
@@ -232,20 +238,8 @@ B.allContracts().then(({ list, reviewer, analyses, relay }) => {
       } catch (e) { aiBtn.disabled = false; msg('Could not send the request. Check the connection and try again.'); }
     };
   }
-  if (reviewer) {
-    const all = JSON.parse(localStorage.getItem('bantai-decisions') || '{}'), mine = all[c.id] || {};
-    let pick = mine.pick || null;
-    const paint = () => document.querySelectorAll('[data-d]').forEach(b => { b.classList.toggle('on', b.dataset.d === pick); b.setAttribute('aria-checked', String(b.dataset.d === pick)); });
-    document.getElementById('why').value = mine.why || '';
-    paint();
-    document.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { pick = b.dataset.d; document.getElementById('derr').textContent = ''; paint(); });
-    document.getElementById('save').onclick = () => {
-      if (!pick) { document.getElementById('derr').textContent = 'Choose a decision first.'; return; }
-      all[c.id] = { pick, why: document.getElementById('why').value.trim(), at: new Date().toISOString() };
-      localStorage.setItem('bantai-decisions', JSON.stringify(all));
-      const s = document.getElementById('save'); s.textContent = 'Saved'; setTimeout(() => s.textContent = 'Save decision', 1500);
-    };
-  }
+  document.getElementById('reportBtn')?.addEventListener('click', () => BReport.open(c.id));
+  if (reviewer) BR.mount({ c, list });   // checklist, decision gate and referral memo: assets/review.js
 });
 </script>
 </body>

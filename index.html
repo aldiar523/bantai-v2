@@ -32,6 +32,7 @@
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:26px">
       <a class="cta" href="queue.html" style="background:var(--red);color:#fff">See the official records →</a>
       <a class="cta" href="method.html" style="border:2px solid #fff;color:#fff">How it works</a>
+      <button class="cta" id="reportHero" style="border:2px solid #fff;color:#fff;background:none;cursor:pointer">Report what you see</button>
     </div>
     <div class="credit" style="margin-top:22px">Flood-control works in Meycauayan, Bulacan. Photo: Judgefloro, CC BY-SA 4.0, via Wikimedia Commons.</div>
   </div>
@@ -87,9 +88,14 @@
   <div class="col">
     <div class="kicker">The money</div>
     <h2 class="h2" id="floodTitle">Flood control's share of DPWH contract value</h2>
-    <p style="margin-top:12px;max-width:760px">Contract value by start year, ₱ billion. Black: flood control, the focus of the 2025 scandal. Grey: everything else.</p>
-    <div class="yrs" id="years" role="img"></div>
+    <p style="margin-top:12px;max-width:760px" id="moneyDek"></p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:18px"><span class="small muted">Share of</span><button class="chip on" data-m="value" aria-pressed="true">Contract value</button><button class="chip" data-m="count" aria-pressed="false">Number of contracts</button></div>
+    <div id="legend" class="small" style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:14px"></div>
+    <div class="yrs" id="years" role="img" style="position:relative"></div>
     <div id="yearLabels" class="mono" style="display:grid;gap:clamp(4px,1vw,10px);margin-top:10px;font-size:12px;color:var(--mute)"></div>
+    <div id="ytip" class="ytip" hidden></div>
+    <details style="margin-top:18px"><summary class="small" style="cursor:pointer;font-weight:600">Table: share by infrastructure type and year</summary><div style="overflow-x:auto;margin-top:10px"><table class="ytab" id="ytab"></table></div></details>
+    <p class="small" style="margin:14px 0 0;color:var(--mute);max-width:760px" id="moneyNote"></p>
   </div>
 </section>
 
@@ -108,6 +114,7 @@
 </footer>
 </div>
 <script src="assets/core.js"></script>
+<script src="assets/report.js"></script>
 <script>
 B.header('home');
 B.publicData().then(p => {
@@ -140,16 +147,33 @@ B.publicData().then(p => {
   document.getElementById('whereHead').textContent = `${top.region} leads, with ${B.n(top.n)} open contracts on record worth ${B.peso(top.value)}`;
 
   // money
-  const ys = p.years.filter(y => y.year < new Date(p.snapshot).getFullYear()), max = Math.max(...ys.map(y => y.all));
+  const TYPES = [['Roads', '#3F73AE'], ['Flood Control and Drainage', '#C4362C'], ['Buildings and Facilities', '#1E9C8E'], ['Bridges', '#D69A12'], ['Water Provision and Storage', '#8A63C7'], ['Other', '#B5652F']];
+  const FLOOD = TYPES[1][0];
+  const thisYear = new Date(p.snapshot).getFullYear(), ys = p.years.filter(y => y.year < thisYear);
   const share = y => Math.round(100 * y.flood / y.all), first = ys[0], peak = ys.reduce((a, y) => share(y) > share(a) ? y : a, ys[0]);
   document.getElementById('floodTitle').textContent = `Flood control grew from ${share(first)}% to ${share(peak)}% of DPWH contract value between ${first.year} and ${peak.year}`;
-  const yr = document.getElementById('years'); yr.style.gridTemplateColumns = `repeat(${ys.length},minmax(0,1fr))`;
-  yr.setAttribute('aria-label', 'Flood control share by year: ' + ys.map(y => `${y.year} ${share(y)}%`).join(', '));
-  yr.innerHTML = ys.map(y => `<div>
-    <span class="mono" style="font-size:${y === peak ? 16 : 12}px;font-weight:${y === peak ? 600 : 500};margin-bottom:4px;color:${y === peak ? 'var(--red)' : 'var(--ink)'}">${share(y)}%</span>
-    <div style="height:${(78 * (y.all - y.flood) / max).toFixed(1)}%;background:#CFCAC0"></div><div style="height:${(78 * y.flood / max).toFixed(1)}%;background:${y === peak ? 'var(--red)' : 'var(--ink)'}"></div></div>`).join('');
-  const yl = document.getElementById('yearLabels'); yl.style.gridTemplateColumns = yr.style.gridTemplateColumns;
-  yl.innerHTML = ys.map(y => `<span>${y.year}<br>₱${B.n(Math.round(y.all / 1e9))} bn</span>`).join('');
+  document.getElementById('moneyDek').textContent = `What DPWH contracts are for, by start year. Red: flood control and drainage, the focus of the 2025 scandal. Roads remain the largest type; no other type grew like this.`;
+  document.getElementById('moneyNote').textContent = (p.infra_source === 'dpwh' ? "Types are DPWH's own categories." : "Types are read from each contract's title and DPWH's road flag, so they are close but not exact.") + ` Values are budgets as listed by DPWH. ${thisYear} is left out because the year is not finished.`;
+  document.getElementById('legend').innerHTML = TYPES.map(([k, col]) => `<span style="display:inline-flex;align-items:center;gap:6px"><i style="width:12px;height:12px;background:${col};display:inline-block"></i>${k}</span>`).join('');
+  const yr = document.getElementById('years'), yl = document.getElementById('yearLabels'), tip = document.getElementById('ytip');
+  function money(mode) {
+    const pct = (y, k) => 100 * y[mode][k] / (mode === 'value' ? y.all : y.n);
+    yr.style.gridTemplateColumns = yl.style.gridTemplateColumns = `repeat(${ys.length},minmax(0,1fr))`;
+    yr.setAttribute('aria-label', `${FLOOD} share of ${mode === 'value' ? 'contract value' : 'contracts'} by year: ` + ys.map(y => `${y.year} ${Math.round(pct(y, FLOOD))}%`).join(', '));
+    yr.innerHTML = ys.map(y => `<div data-y="${y.year}" style="cursor:default"><span class="mono" style="font-size:12px;font-weight:600;margin-bottom:4px">${Math.round(pct(y, FLOOD))}%</span>${TYPES.slice().reverse().map(([k, col]) => `<div style="height:${(0.9 * pct(y, k)).toFixed(2)}%;background:${col};border-top:${pct(y, k) > 0.4 ? '2px solid var(--paper)' : '0'};box-sizing:border-box"></div>`).join('')}</div>`).join('');
+    yl.innerHTML = ys.map(y => `<span>${y.year}<br>${mode === 'value' ? '₱' + B.n(Math.round(y.all / 1e9)) + ' bn' : B.n(y.n)}</span>`).join('');
+    document.getElementById('ytab').innerHTML = `<thead><tr><th>Year</th>${TYPES.map(([k]) => `<th class="r">${k}</th>`).join('')}<th class="r">${mode === 'value' ? 'Total' : 'Contracts'}</th></tr></thead><tbody>` +
+      p.years.map(y => `<tr><td class="mono">${y.year}${y.year === thisYear ? ' so far' : ''}</td>${TYPES.map(([k]) => `<td class="r mono">${pct(y, k).toFixed(1)}%</td>`).join('')}<td class="r mono">${mode === 'value' ? '₱' + B.n(Math.round(y.all / 1e9)) + ' bn' : B.n(y.n)}</td></tr>`).join('') + '</tbody>';
+    yr.querySelectorAll('[data-y]').forEach(col => {
+      const y = ys.find(v => v.year === +col.dataset.y);
+      col.onmousemove = e => { tip.hidden = false; tip.innerHTML = `<b>${y.year}</b>` + TYPES.map(([k, c2]) => `<div><i style="background:${c2}"></i>${k}<span class="mono">${pct(y, k).toFixed(1)}%</span></div>`).join('');
+        tip.style.left = (e.clientX > innerWidth - 320 ? e.clientX - 304 : e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; };
+      col.onmouseleave = () => { tip.hidden = true; };
+    });
+  }
+  document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { document.querySelectorAll('[data-m]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); money(b.dataset.m); });
+  money('value');
+  document.getElementById('reportHero').onclick = () => BReport.open('');
 
   document.getElementById('seal').textContent = `${B.date(p.snapshot)} · SHA-256 ${p.sha256.slice(0, 12)}…`;
   document.getElementById('method').textContent = `Method ${p.method} · updated every Monday`;
